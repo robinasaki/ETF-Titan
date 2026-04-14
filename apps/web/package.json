@@ -9,9 +9,11 @@
   "dependencies": {
     "@etf-titan/shared": "workspace:*",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tamagui": "^2.0.0-rc.40"
   },
   "devDependencies": {
+    "@tamagui/vite-plugin": "^2.0.0-rc.40",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",

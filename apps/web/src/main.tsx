@@ -1,11 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { TamaguiProvider } from "tamagui";
+
+import { tamaguiConfig } from "@etf-titan/shared/theme.tamagui";
 
 import App from "./App";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+      <App />
+    </TamaguiProvider>
   </React.StrictMode>,
 );
