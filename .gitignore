@@ -1,9 +1,10 @@
 # Dependencies 
 node_modules/
 dist/
+.tamagui/
 
 # Mac
-.DS_Store/
+.DS_Store
 
 # Keep the empty data directory
 data/*
