@@ -7,12 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others --names \"SERVER,WEB\" --prefix \"[{name}]\" \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\"",
-    "dev:server": "bun --cwd apps/server dev",
+    "dev": "concurrently --kill-others --names \"API,WEB\" --prefix \"[{name}]\" \"bun run dev:api\" \"bun run dev:web\"",
+    "dev:api": "if [ -x apps/server/.venv/bin/python ]; then apps/server/.venv/bin/python -m uvicorn app.main:app --app-dir apps/server --reload --host 0.0.0.0 --port 8000; else python3 -m uvicorn app.main:app --app-dir apps/server --reload --host 0.0.0.0 --port 8000; fi",
     "dev:web": "bun --cwd apps/web dev",
-    "build": "bun run build:shared && bun run build:server && bun run build:web",
+    "build": "bun run build:shared && bun run build:web",
     "build:shared": "bun --cwd packages/shared build",
-    "build:server": "bun --cwd apps/server build",
     "build:web": "bun --cwd apps/web build",
     "check": "tsc -b --pretty false"
   },

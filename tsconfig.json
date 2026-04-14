@@ -18,7 +18,6 @@
   "files": [],
   "references": [
     { "path": "./packages/shared" },
-    { "path": "./apps/server" },
     { "path": "./apps/web" }
   ]
 }

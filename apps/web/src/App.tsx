@@ -14,7 +14,7 @@ export default function App() {
         <p className="eyebrow">Take-home scaffold</p>
         <h1>{APP_NAME}</h1>
         <p className="subtitle">
-          Eden-style monorepo foundation with a minimal React client and Elysia server.
+          Monorepo foundation with a minimal React client and a planned FastAPI plus pandas backend.
         </p>
       </section>
 
