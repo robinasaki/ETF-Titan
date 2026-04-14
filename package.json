@@ -1,0 +1,26 @@
+{
+  "name": "@etf-titan/root",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others --names \"SERVER,WEB\" --prefix \"[{name}]\" \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\"",
+    "dev:server": "bun --cwd apps/server dev",
+    "dev:web": "bun --cwd apps/web dev",
+    "build": "bun run build:shared && bun run build:server && bun run build:web",
+    "build:shared": "bun --cwd packages/shared build",
+    "build:server": "bun --cwd apps/server build",
+    "build:web": "bun --cwd apps/web build",
+    "check": "tsc -b --pretty false"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  }
+}

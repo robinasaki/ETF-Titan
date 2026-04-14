@@ -1,0 +1,19 @@
+# Dependencies 
+node_modules/
+dist/
+
+# Mac
+.DS_Store/
+
+# Keep the empty data directory
+data/*
+!data/.gitkeep
+
+# Env vars
+.env
+.env.*
+!.env.example
+
+# Log vars
+*.log
+eden/

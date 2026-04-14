@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@etf-titan/shared": ["./packages/shared/src/index.ts"],
+      "@etf-titan/shared/*": ["./packages/shared/src/*"]
+    }
+  },
+  "files": [],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./apps/server" },
+    { "path": "./apps/web" }
+  ]
+}
