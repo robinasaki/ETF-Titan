@@ -27,17 +27,9 @@ bun --version
 # Expected 1.3.12
 ```
 
-Install the frontend dependencies from the repository root:
+Install all frontend and backend dependencies from the repository root:
 ```bash
-bun i
-```
-
-Create a Python virtual environment for the API and install the planned backend dependencies:
-```bash
-cd apps/server
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+bun run setup
 ```
 
 Run the frontend and backend together from the repository root:
