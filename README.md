@@ -32,16 +32,30 @@ Install all frontend and backend dependencies from the repository root:
 bun run setup
 ```
 
-Run the frontend and backend together from the repository root:
+Run the frontend and backend together from the repository root on localhost only:
 ```bash
 bun run dev
 ```
 
-Or run them separately:
+Expose the frontend and backend to other devices on your LAN only when needed:
+```bash
+bun run dev:LAN
+```
+
+Or run them separately on localhost:
 ```bash
 bun run dev:web
 ```
 
 ```bash
 bun run dev:api
+```
+
+LAN-specific per-service commands are also available:
+```bash
+bun run dev:web:LAN
+```
+
+```bash
+bun run dev:api:LAN
 ```
