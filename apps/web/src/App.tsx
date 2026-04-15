@@ -1,4 +1,5 @@
 import { APP_NAME } from "@etf-titan/shared";
+import { AppButton } from "./components/Buttons/AppButton";
 
 const sections = [
   "ETF upload",
@@ -16,6 +17,11 @@ export default function App() {
         <p className="subtitle">
           Monorepo foundation with a minimal React client and a planned FastAPI plus pandas backend.
         </p>
+        <AppButton>Example Button</AppButton>
+        <AppButton maxWidth={280}>Example Narrow Button</AppButton>
+        <AppButton maxWidth={280} tone="danger">
+          Review reconstructed holdings
+        </AppButton>
       </section>
 
       <section className="grid">
