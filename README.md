@@ -16,8 +16,8 @@ Backend: Python + FastAPI + Pandas
 
 Repository layout:
 - `apps/web`: React client for the single-page trading interface
-- `apps/server`: FastAPI backend scaffold for CSV ingestion and ETF analytics
-- `packages/shared`: Shared frontend constants and UI theme configuration
+- `apps/server`: FastAPI backend for CSV ingestion and ETF analytics
+- `packages/shared`: Shared monorepo files such as the Tamagui theme config, without separate package manifests
 
 ---
 ### To Get Started
