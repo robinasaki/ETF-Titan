@@ -15,7 +15,8 @@
     "dev:web:LAN": "bun --cwd apps/web dev -- --host 0.0.0.0",
     "build": "bun run build:web",
     "build:web": "bun --cwd apps/web build",
-    "check": "tsc -b --pretty false"
+    "check": "tsc -b --pretty false",
+    "test": "bash scripts/test.sh"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
