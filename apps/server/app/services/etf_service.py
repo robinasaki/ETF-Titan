@@ -27,25 +27,13 @@ from app.schemas.etf import (
 )
 
 
-"""
-The allowed margin of error when checking whether an ETF's weight adds up to 1.0.
-"""
+"""Allowed margin of error when ETF weights are checked against 1.0."""
 WEIGHT_SUM_TOLERANCE = 0.01
 
 
 def list_supported_etfs() -> EtfCatalogResponse:
     """
-    Return the list of built-in ETFs that the backend knows about, and how many constituent each one has.
-
-    Response:
-    ```
-    EtfCatalogResponse(
-        items=[
-            EtfCatalogItem(id="ETF1", constituent_count=10),
-            EtfCatalogItem(id="ETF2", constituent_count=25),
-        ]
-    )
-    ```
+    Return the built-in ETF ids and each ETF's constituent count.
     """
     items = [
         EtfCatalogItem(id=etf_id, constituent_count=len(load_etf_weights_frame(etf_id)))
@@ -56,25 +44,11 @@ def list_supported_etfs() -> EtfCatalogResponse:
 
 def get_holdings_snapshot(etf_id: str) -> HoldingsResponse:
     """
-    Given an ETF id, return the ETF's current holding with each constituent's weight,
-    latest closing price, and latest weighted value.
+    Return the latest holdings snapshot for one built-in ETF.
 
-    Response:
-    ```
-    HoldingsResponse(
-        etf_id="ETF1",
-        latest_date="2024-01-31",
-        items=[
-            HoldingSnapshotItem(
-                name="AAPL",
-                weight=0.15,
-                latest_close=192.33,
-                latest_holding_value=28.8495,
-            ),
-            ...
-        ],
-    )
-    ```
+    Each item includes the constituent symbol, its configured weight, the latest
+    closing price from the default prices dataset, and the latest weighted
+    holding value.
     """
     normalized_etf_id, latest_date, holdings_frame, _ = _build_named_holdings_frame(
         etf_id
@@ -95,25 +69,10 @@ def get_holdings_snapshot(etf_id: str) -> HoldingsResponse:
 
 def get_reconstructed_price_series(etf_id: str) -> PriceSeriesResponse:
     """
-    Creates a historical daily ETF value given an ETF id.
+    Reconstruct the historical daily price series for one built-in ETF.
 
-    Response:
-    ```
-    {
-        "etf_id": "ETF1",
-        "latest_date": "2024-01-31",
-        "items": [
-        {
-            "date": "2024-01-01",
-            "price": 101.23
-        },
-        {
-            "date": "2024-01-02",
-            "price": 101.87
-        }
-        ]
-    }
-    ```
+    The series is derived by applying the ETF's static constituent weights to
+    the default constituent price history for each available date.
     """
     # Compute the ETF aggregate price timeseries.
     normalized_etf_id, latest_date, holdings_frame, prices_frame = (
@@ -135,7 +94,10 @@ def get_reconstructed_price_series(etf_id: str) -> PriceSeriesResponse:
 
 def get_top_holdings(etf_id: str, limit: int = 5) -> TopHoldingsResponse:
     """
-    Return the top x ETF by its latest closing price. x is defined through limit.
+    Return the highest-value holdings for one built-in ETF.
+
+    Holdings are ranked by latest holding value, with weight and symbol used as
+    stable tie-breakers.
     """
     normalized_etf_id, latest_date, holdings_frame, _ = _build_named_holdings_frame(
         etf_id
@@ -172,9 +134,11 @@ def _build_named_holdings_frame(
     etf_id: str,
 ) -> tuple[str, str, pd.DataFrame, pd.DataFrame]:
     """
-    Used only on default CSVs.
-    Normalize the ETF id, load that ETF's weight and the default prices dataset,
-    combine them into a validated holding dataset.
+    Build validated holdings data for one built-in ETF.
+
+    This helper normalizes the ETF id, loads the built-in ETF weights CSV and
+    the built-in prices CSV, then aligns them into a holdings snapshot plus the
+    filtered price history used by downstream calculations.
     """
     normalized_etf_id = etf_id.strip().upper()
     weights_frame = load_etf_weights_frame(
@@ -194,7 +158,7 @@ def _build_uploaded_etf_analytics_item(
     top_holdings_limit: int,
 ) -> UploadedEtfAnalyticsResponse:
     """
-    Builds the analytics result for one uploaded ETF CSV file.
+    Build the analytics payload for one uploaded ETF weights CSV.
     """
     weights_frame = load_uploaded_etf_weights_frame(etf_staged_path)
     latest_date, holdings_frame, aligned_prices_frame = _build_holdings_frame(
@@ -221,8 +185,10 @@ def analyze_uploaded_etf_bundle(
     top_holdings_limit: int = 5,
 ) -> UploadedAnalyticsBundleResponse:
     """
-    Takes the uploaded bundle, analyze both ETF weighted files against the same uploaded price history,
-    return a single response containing both ETF analyses.
+    Analyze uploaded ETF weights files against one uploaded prices file.
+
+    The uploaded prices dataset is shared across every uploaded ETF file in the
+    bundle, and validated uploads are persisted after successful analysis.
     """
     prices_frame = load_uploaded_prices_frame(prices_staged_path)
     items = [
@@ -251,8 +217,7 @@ def _build_holdings_frame(
     weights_frame: pd.DataFrame, prices_frame: pd.DataFrame
 ) -> tuple[str, pd.DataFrame, pd.DataFrame]:
     """
-    Validate ETF constituents against price history,
-    then build a holdings snapshot with latest prices and weighted values.
+    Align ETF weights with price history and compute derived holdings values.
     """
     holdings_frame = weights_frame.copy()
 
