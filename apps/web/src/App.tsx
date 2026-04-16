@@ -1,5 +1,6 @@
 import { APP_NAME } from "./constants/app";
 import { AppButton } from "./components/Buttons/AppButton";
+import { useEffect, useState } from "react";
 
 const sections = [
   "ETF upload",
@@ -9,27 +10,22 @@ const sections = [
 ];
 
 export default function App() {
+  const [holdings, setHoldings] = useState([]);
+
+  useEffect(() => {
+    const loadHoldings = async () => {
+      const response = await fetch("/etfs/ETF1/holdings");
+      const data = await response.json();
+      setHoldings(data.items);
+    };
+    void loadHoldings();
+  }, []);
+
   return (
     <main className="app-shell">
-      <section className="hero">
-        <p className="eyebrow">Take-home scaffold</p>
-        <h1>{APP_NAME}</h1>
-        <p className="subtitle">
-          Minimal React client with a FastAPI plus pandas backend for local ETF analytics.
-        </p>
-        <AppButton>Example Button</AppButton>
-        <AppButton maxWidth={280}>Example Narrow Button</AppButton>
-        <AppButton maxWidth={280} tone="danger">
-          Review reconstructed holdings
-        </AppButton>
-      </section>
-
       <section className="grid">
-        {sections.map((section) => (
-          <article className="card" key={section}>
-            <h2>{section}</h2>
-            <p>Placeholder only. No assessment functionality has been implemented yet.</p>
-          </article>
+        {holdings.map((holding, idx) => (
+          <p key={idx}>{JSON.stringify(holding)}</p>
         ))}
       </section>
     </main>

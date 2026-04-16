@@ -19,5 +19,9 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      "/etfs": "http://127.0.0.1:8000",
+      "/health": "http://127.0.0.1:8000",
+    },
   },
 });
