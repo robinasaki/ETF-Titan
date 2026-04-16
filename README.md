@@ -1,73 +1,138 @@
 # ETF Titan
 
-### Introduction
+ETF Titan is a single-page ETF analytics app built for the take-home exercise. 
 
-ETF Titan is a full-stack single-page web application that allows traders to upload ETF constituent data, reconstruct ETF prices from historical constituent prices, and explore the results through a compact interactive dashboard. The core functionalities include:
-- Display an interactive constituent table with name, weight and latest close price
-- Reconstruct the ETF price as the weighted sum of constituent prices over time
-- Visualize the reconstructed ETF price with a zoomable time series chart
-- Highlight the top 5 holdings based on the latest market close using a bar chart
+It lets a user inspect bundled ETF sample data or upload a strict three-file CSV bundle, then view holdings, reconstructed ETF prices, and top holdings derived from local constituent price history.
 
-The repository ships with three pre-loaded non-sensitive sample CSV files in `apps/server/storage/default/`:
+## Product Scope
+
+- Upload `ETF1.csv`, `ETF2.csv`, and `prices.csv` together for analysis (or use the default, pre-loaded ones)
+- View a holdings table with constituent name, weight, latest close, and latest holding value
+- Reconstruct ETF price history from constituent price history
+- Highlight the top 5 holdings by latest holding value
+- Run entirely from local repository data without any external market data API
+
+## Tech Stack
+
+- Frontend: React, Vite, Tamagui
+- Backend: FastAPI, Pandas
+- Tooling: Bun, TypeScript, Python `unittest`
+
+*Why the stack?*
+
+For frontend, I decided to use React because of its component-driven UI and my familiarity. Vite is a straightforward framework for this single-page application local dev. I used Tamagui because it is a good practice to centralize the colour and theme tokens from the very start of the project. Combined with the below repo & frontend structure, we can have almost one single source of truth for the UI tokens.
+
+For a backend non-relational ETL, Pandas is a very striaght forward solution: We don't need any DB definition, and the input is just local CSV data and the core task is dataframe-style transformation and analytics, which Pandas handles more naturally than a separate DB layer. Then, compared to Flask, FastAPI gives stronger typing and schema support out of the box, and is better at async support.
+
+Then, Bun, my favourite TS engine. Compare to traditional engine like NodeJS, it is faster, does more things, and comes with a lot of pre-loaded functionalities.
+
+## Repository Structure
+
+- `apps/web`: React + Vite + Tamagui frontend
+- `apps/server`: FastAPI + Pandas backend
+- `packages/shared`: shared frontend config such as Tamagui theme files
+- `scripts`: repo-level setup, dev, test, and load-test entrypoints
+
+*Why the structure?*
+
+We used a monorepo for scalability and maintainability.
+
+For example, if the product grows to a mobile client, we can add `apps/mobile` without organizing the codebase. This structure clearly separates private app code from intentionally shared code: `apps/*` contains app-specific implementation, while `package/shared` contains cross-app config such as Tamagui theme tokens.
+
+This gives us cleaner ownership boundaries, easier reuse, less duplication, and simpler cross-app development as the platform expands.
+
+## Assumptions
+
+- ETF weights are treated as static over time.
+- ETF reconstruction is the weighted sum of constituent prices for each date.
+- The latest ETF snapshot is derived from the last available row in `prices.csv`.
+- The pre-loaded datasets are not sensitive.
+- Uploaded data follows the same CSV shapes as the bundled fixtures.
+- The app is intentionally scoped to a local take-home environment, so auth and external data integrations are out of scope.
+
+## Bundled Data
+
+The repo includes sample non-sensitive CSVs under `apps/server/storage/default/`:
+
 - `ETF1.csv`
 - `ETF2.csv`
 - `prices.csv`
 
-These bundled files let the app run immediately after setup with reproducible demo data. Users can also upload their own `ETF1.csv`, `ETF2.csv`, and `prices.csv` files together for ad hoc analysis through the same interface.
+These files allow the app to run immediately after setup and also act as the canonical shape for uploaded CSV validation. The user can also manually override the above CSVs.
 
-### Assumptions
 
-- ETF weights are treated as constant over time for reconstruction.
-- The reconstructed ETF price changes only as constituent prices change.
+## Backend Overview
 
----
-### Tech Stack & Structure
-Frontend: React + Vite + Tamagui
+The backend exposes:
 
-Backend: Python + FastAPI + Pandas
+- `GET /health`
+- `GET /etfs`
+- `GET /etfs/{etf_id}/holdings`
+- `GET /etfs/{etf_id}/price-series`
+- `GET /etfs/{etf_id}/top-holdings`
+- `POST /etfs/upload`
 
-Repository layout:
-- `apps/web`: React client for the single-page trading interface
-- `apps/server`: FastAPI backend for CSV ingestion and ETF analytics
-- `packages/shared`: Shared monorepo files such as the Tamagui theme config, without separate package manifests
+See `apps/server/README.md` for backend-specific behavior and `apps/server/app/routers/README.md` for route-level notes.
 
----
-### To Get Started
-Ensure you have `bun` `1.3.12` and `python3` installed.
-```bash
-bun --version
-# Expected 1.3.12
-```
+## Getting Started
 
-Install all frontend and backend dependencies from the repository root:
+From the repository root:
+
 ```bash
 bun run setup
+# This installs the dependencies for both TS and Python
 ```
 
-Run the frontend and backend together from the repository root on localhost only:
+Start the full stack locally:
+
 ```bash
 bun run dev
+# Vite should log the localhost URL here
 ```
 
-Expose the frontend and backend to other devices on your LAN only when needed:
-```bash
-bun run dev:LAN
-```
+---
 
-Or run them separately on localhost:
+Run frontend and backend separately if needed:
+
 ```bash
 bun run dev:web
-```
-
-```bash
 bun run dev:api
 ```
 
-LAN-specific per-service commands are also available:
-```bash
-bun run dev:web:LAN
-```
+LAN variants are also available:
 
 ```bash
+bun run dev:LAN
+# This exposes your page to all LAN devices
+# Useful when testing frontend in diff envs
+```
+
+And the frontend backend separately if needed:
+
+```bash
+bun run dev:web:LAN
 bun run dev:api:LAN
 ```
+
+By default the backend serves on `http://127.0.0.1:8000`.
+
+## Testing
+
+Run the standard repo verification from the repository root:
+
+```bash
+bun run test
+```
+
+This runs:
+
+- frontend workspace type checking
+- backend unit tests discovered from `apps/server/tests` with the `test*.py` pattern
+
+The dedicated load test is intentionally separate from the normal test suite:
+
+```bash
+bun run load test
+```
+
+That command regenerates large synthetic CSV fixtures and runs only the backend load-focused test file.
