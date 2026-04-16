@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import { TamaguiProvider } from "tamagui";
-import { tamaguiConfig } from "@etf-titan/shared/theme.tamagui";
+import { tamaguiConfig } from "@shared/theme.tamagui";
 
 import App from "./App";
 

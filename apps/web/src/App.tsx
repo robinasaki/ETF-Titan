@@ -1,4 +1,4 @@
-import { APP_NAME } from "@etf-titan/shared";
+import { APP_NAME } from "./constants/app";
 import { AppButton } from "./components/Buttons/AppButton";
 
 const sections = [
@@ -15,7 +15,7 @@ export default function App() {
         <p className="eyebrow">Take-home scaffold</p>
         <h1>{APP_NAME}</h1>
         <p className="subtitle">
-          Monorepo foundation with a minimal React client and a planned FastAPI plus pandas backend.
+          Minimal React client with a FastAPI plus pandas backend for local ETF analytics.
         </p>
         <AppButton>Example Button</AppButton>
         <AppButton maxWidth={280}>Example Narrow Button</AppButton>

@@ -1,8 +1,14 @@
 import { defineConfig } from "vite";
+import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { tamaguiPlugin } from "@tamagui/vite-plugin";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@shared": path.resolve(__dirname, "../../packages/shared/src"),
+    },
+  },
   plugins: [
     react(),
     tamaguiPlugin({

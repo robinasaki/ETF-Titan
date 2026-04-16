@@ -10,14 +10,11 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@etf-titan/shared": ["./packages/shared/src/index.ts"],
-      "@etf-titan/shared/theme.tamagui": ["./packages/shared/src/theme.tamagui.ts"],
-      "@etf-titan/shared/*": ["./packages/shared/src/*"]
+      "@shared/*": ["./packages/shared/src/*"]
     }
   },
   "files": [],
   "references": [
-    { "path": "./packages/shared" },
     { "path": "./apps/web" }
   ]
 }

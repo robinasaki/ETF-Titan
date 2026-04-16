@@ -8,13 +8,13 @@ dist/
 *.tsbuildinfo
 .vite/
 coverage/
+apps/server/storage/uploads/*.csv
+!apps/server/storage/uploads/.gitkeep
+apps/server/storage/tmp/*.csv
+!apps/server/storage/tmp/.gitkeep
 
 # Mac
 .DS_Store
-
-# Keep the empty data directory
-data/*
-!data/.gitkeep
 
 # Env vars
 .env

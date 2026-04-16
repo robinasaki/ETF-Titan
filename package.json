@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "setup": "bash scripts/setup.sh",
@@ -14,8 +13,7 @@
     "dev:api:LAN": "if [ -x apps/server/.venv/bin/python ]; then apps/server/.venv/bin/python -m uvicorn app.main:app --app-dir apps/server --reload --host 0.0.0.0 --port 8000; else python3 -m uvicorn app.main:app --app-dir apps/server --reload --host 0.0.0.0 --port 8000; fi",
     "dev:web": "bun --cwd apps/web dev -- --host localhost",
     "dev:web:LAN": "bun --cwd apps/web dev -- --host 0.0.0.0",
-    "build": "bun run build:shared && bun run build:web",
-    "build:shared": "bun --cwd packages/shared build",
+    "build": "bun run build:web",
     "build:web": "bun --cwd apps/web build",
     "check": "tsc -b --pretty false"
   },
