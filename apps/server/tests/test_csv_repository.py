@@ -14,10 +14,10 @@ if str(SERVER_ROOT) not in sys.path:
 
 from app.repositories import csv_repository
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("test_csv_repository")
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    handler.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 logger.propagate = False
