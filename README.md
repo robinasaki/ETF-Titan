@@ -13,7 +13,12 @@ The repository ships with three pre-loaded non-sensitive sample CSV files in `ap
 - `ETF2.csv`
 - `prices.csv`
 
-These bundled files let the app run immediately after setup with reproducible demo data. Users can also upload their own ETF weights CSV and optionally provide a custom prices CSV for ad hoc analysis through the same interface.
+These bundled files let the app run immediately after setup with reproducible demo data. Users can also upload their own `ETF1.csv`, `ETF2.csv`, and `prices.csv` files together for ad hoc analysis through the same interface.
+
+### Assumptions
+
+- ETF weights are treated as constant over time for reconstruction.
+- The reconstructed ETF price changes only as constituent prices change.
 
 ---
 ### Tech Stack & Structure
