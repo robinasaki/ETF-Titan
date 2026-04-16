@@ -8,6 +8,13 @@ ETF Titan is a full-stack single-page web application that allows traders to upl
 - Visualize the reconstructed ETF price with a zoomable time series chart
 - Highlight the top 5 holdings based on the latest market close using a bar chart
 
+The repository ships with three pre-loaded non-sensitive sample CSV files in `apps/server/storage/default/`:
+- `ETF1.csv`
+- `ETF2.csv`
+- `prices.csv`
+
+These bundled files let the app run immediately after setup with reproducible demo data. Users can also upload their own ETF weights CSV and optionally provide a custom prices CSV for ad hoc analysis through the same interface.
+
 ---
 ### Tech Stack & Structure
 Frontend: React + Vite + Tamagui
