@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -139,20 +137,3 @@ class UploadedEtfAnalyticsResponse(BaseModel):
     top_holdings: list[HoldingSnapshotItem]
 
 
-class UploadedAnalyticsBundleResponse(BaseModel):
-    """
-    The combined response returned after analyzing an uploaded ETF bundle.
-    The bundle must contain `ETF1.csv`, `ETF2.csv`, and `prices.csv`.
-
-    Fields:
-    - source: Always `upload` for this endpoint
-    - prices_file_name: Uploaded prices CSV file name
-    - top_holdings_limit: Requested top holdings limit
-    - items: Per-ETF uploaded analytics for both ETF files
-    """
-    model_config = ConfigDict(extra="forbid")
-
-    source: Literal["upload"]
-    prices_file_name: str
-    top_holdings_limit: int = Field(ge=1)
-    items: list[UploadedEtfAnalyticsResponse]

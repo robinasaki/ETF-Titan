@@ -3,7 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -256,66 +256,45 @@ class EtfServiceTests(unittest.TestCase):
         )
         self.assertEqual([item.name for item in response.top_holdings], ["MSFT"])
 
-    def test_analyze_uploaded_etf_bundle_returns_sorted_items_and_persists_files(self) -> None:
-        """Ensure analyze_uploaded_etf_bundle() returns sorted ETF items and persists validated uploads."""
-        etf1_path = self.temp_path / "staged-ETF1.csv"
-        etf2_path = self.temp_path / "staged-ETF2.csv"
-        prices_path = self.temp_path / "staged-prices.csv"
-        for path in (etf1_path, etf2_path, prices_path):
-            path.write_text("fixture", encoding="utf-8")
-            logger.info("Created staged upload fixture at %s", path)
+    def test_analyze_uploaded_etf_returns_item_and_persists_uploaded_file(self) -> None:
+        """Ensure analyze_uploaded_etf() uses bundled prices and persists the ETF upload."""
+        etf_path = self.temp_path / "staged-ETF1.csv"
+        etf_path.write_text("fixture", encoding="utf-8")
+        logger.info("Created staged upload fixture at %s", etf_path)
 
-        bundle_items = {
-            "ETF1.csv": etf_service.UploadedEtfAnalyticsResponse(
-                etf_id="ETF1",
-                file_name="ETF1.csv",
-                latest_date="2024-01-02",
-                holdings=[],
-                price_series=[],
-                top_holdings=[],
-            ),
-            "ETF2.csv": etf_service.UploadedEtfAnalyticsResponse(
-                etf_id="ETF2",
-                file_name="ETF2.csv",
-                latest_date="2024-01-02",
-                holdings=[],
-                price_series=[],
-                top_holdings=[],
-            ),
-        }
+        uploaded_item = etf_service.UploadedEtfAnalyticsResponse(
+            etf_id="ETF1",
+            file_name="ETF1.csv",
+            latest_date="2024-01-02",
+            holdings=[],
+            price_series=[],
+            top_holdings=[],
+        )
 
         with (
-            patch.object(etf_service, "load_uploaded_prices_frame", return_value=self.prices_frame) as load_uploaded_prices,
+            patch.object(etf_service, "load_prices_frame", return_value=self.prices_frame) as load_prices,
             patch.object(
                 etf_service,
                 "_build_uploaded_etf_analytics_item",
-                side_effect=lambda etf_file_name, etf_staged_path, prices_frame, top_holdings_limit: bundle_items[etf_file_name],
+                return_value=uploaded_item,
             ) as build_item,
             patch.object(etf_service, "persist_validated_upload") as persist_upload,
         ):
-            response = etf_service.analyze_uploaded_etf_bundle(
-                etf_file_paths={
-                    "ETF2.csv": etf2_path,
-                    "ETF1.csv": etf1_path,
-                },
-                prices_file_name="prices.csv",
-                prices_staged_path=prices_path,
+            response = etf_service.analyze_uploaded_etf(
+                etf_file_name="ETF1.csv",
+                etf_staged_path=etf_path,
                 top_holdings_limit=2,
             )
 
-        load_uploaded_prices.assert_called_once_with(prices_path)
-        self.assertEqual(response.source, "upload")
-        self.assertEqual(response.prices_file_name, "prices.csv")
-        self.assertEqual(response.top_holdings_limit, 2)
-        self.assertEqual([item.etf_id for item in response.items], ["ETF1", "ETF2"])
-        self.assertEqual(build_item.call_count, 2)
-        persist_upload.assert_has_calls(
-            [
-                call(etf2_path, "ETF2.csv"),
-                call(etf1_path, "ETF1.csv"),
-                call(prices_path, "prices.csv"),
-            ]
+        load_prices.assert_called_once_with()
+        build_item.assert_called_once_with(
+            etf_file_name="ETF1.csv",
+            etf_staged_path=etf_path,
+            prices_frame=self.prices_frame,
+            top_holdings_limit=2,
         )
+        persist_upload.assert_called_once_with(etf_path, "ETF1.csv")
+        self.assertEqual(response.etf_id, "ETF1")
 
     def test_serialize_price_series_items_reconstructs_weighted_history(self) -> None:
         """Ensure _serialize_price_series_items() converts reconstructed ETF prices into response points."""

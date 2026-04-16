@@ -101,25 +101,13 @@ class CsvRepositoryTests(unittest.TestCase):
         ):
             csv_repository.load_uploaded_etf_weights_frame(upload_path)
 
-    def test_load_uploaded_prices_frame_rejects_invalid_numeric_values(self) -> None:
-        """Ensure load_uploaded_prices_frame() rejects invalid numeric price values."""
-        upload_path = self.temp_path / "prices.csv"
-        upload_path.write_text("DATE,AAPL\n2024-01-01,not-a-number\n", encoding="utf-8")
-        logger.info("Wrote invalid-prices upload fixture to %s", upload_path)
-
-        with self.assertRaisesRegex(
-            csv_repository.DatasetValidationError,
-            "invalid numeric values",
-        ):
-            csv_repository.load_uploaded_prices_frame(upload_path)
-
     def test_create_staged_upload_path_uses_safe_basename(self) -> None:
         """Ensure the staged uploaded directory creation function."""
         with patch.object(csv_repository, "TEMP_UPLOADS_DIR", self.temp_path / "tmp"):
-            staged_path = csv_repository.create_staged_upload_path("../nested/prices.csv")
+            staged_path = csv_repository.create_staged_upload_path("../nested/ETF1.csv")
 
         self.assertEqual(staged_path.parent, self.temp_path / "tmp")
-        self.assertEqual(staged_path.name.split("-", 1)[1], "prices.csv")
+        self.assertEqual(staged_path.name.split("-", 1)[1], "ETF1.csv")
         self.assertTrue((self.temp_path / "tmp").is_dir())
 
     def test_cleanup_staged_upload_removes_existing_file(self) -> None:

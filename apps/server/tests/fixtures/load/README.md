@@ -4,7 +4,8 @@ This directory contains deterministic synthetic CSV fixtures for the backend upl
 
 - `ETF1.csv`: 1200 constituent weights
 - `ETF2.csv`: 1200 constituent weights
-- `prices.csv`: 7200 dates across 240 symbols
+
+During `bun run load test`, the test builds a large synthetic prices frame in memory and patches the bundled price loader to return it. Only the ETF weights CSV fixtures are written to disk.
 
 Regenerate the fixtures from the repository root with:
 

@@ -11,7 +11,6 @@ from app.repositories.csv_repository import (
     load_etf_weights_frame,
     load_prices_frame,
     load_uploaded_etf_weights_frame,
-    load_uploaded_prices_frame,
     persist_validated_upload,
 )
 from app.schemas.etf import (
@@ -22,7 +21,6 @@ from app.schemas.etf import (
     PriceSeriesPoint,
     PriceSeriesResponse,
     TopHoldingsResponse,
-    UploadedAnalyticsBundleResponse,
     UploadedEtfAnalyticsResponse,
 )
 
@@ -178,39 +176,23 @@ def _build_uploaded_etf_analytics_item(
     )
 
 
-def analyze_uploaded_etf_bundle(
-    etf_file_paths: dict[str, Path],
-    prices_file_name: str,
-    prices_staged_path: Path,
+def analyze_uploaded_etf(
+    etf_file_name: str,
+    etf_staged_path: Path,
     top_holdings_limit: int = 5,
-) -> UploadedAnalyticsBundleResponse:
+) -> UploadedEtfAnalyticsResponse:
     """
-    Analyze uploaded ETF weights files against one uploaded prices file.
-
-    The uploaded prices dataset is shared across every uploaded ETF file in the
-    bundle, and validated uploads are persisted after successful analysis.
+    Analyze one uploaded ETF weights CSV against the bundled prices dataset.
     """
-    prices_frame = load_uploaded_prices_frame(prices_staged_path)
-    items = [
-        _build_uploaded_etf_analytics_item(
-            etf_file_name=etf_file_name,
-            etf_staged_path=etf_file_paths[etf_file_name],
-            prices_frame=prices_frame,
-            top_holdings_limit=top_holdings_limit,
-        )
-        for etf_file_name in sorted(etf_file_paths)
-    ]
-
-    for etf_file_name, etf_staged_path in etf_file_paths.items():
-        persist_validated_upload(etf_staged_path, etf_file_name)
-    persist_validated_upload(prices_staged_path, Path(prices_file_name).name)
-
-    return UploadedAnalyticsBundleResponse(
-        source="upload",
-        prices_file_name=Path(prices_file_name).name,
+    prices_frame = load_prices_frame()
+    item = _build_uploaded_etf_analytics_item(
+        etf_file_name=etf_file_name,
+        etf_staged_path=etf_staged_path,
+        prices_frame=prices_frame,
         top_holdings_limit=top_holdings_limit,
-        items=items,
     )
+    persist_validated_upload(etf_staged_path, etf_file_name)
+    return item
 
 
 def _build_holdings_frame(
@@ -338,7 +320,7 @@ def _round_number(value: float, digits: int = 6) -> float:
 __all__ = [
     "DatasetValidationError",
     "UnknownEtfError",
-    "analyze_uploaded_etf_bundle",
+    "analyze_uploaded_etf",
     "get_holdings_snapshot",
     "get_reconstructed_price_series",
     "get_top_holdings",

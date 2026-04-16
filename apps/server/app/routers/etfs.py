@@ -12,12 +12,12 @@ from app.schemas.etf import (
     HoldingsResponse,
     PriceSeriesResponse,
     TopHoldingsResponse,
-    UploadedAnalyticsBundleResponse,
+    UploadedEtfAnalyticsResponse,
 )
 from app.services.etf_service import (
     DatasetValidationError,
     UnknownEtfError,
-    analyze_uploaded_etf_bundle,
+    analyze_uploaded_etf,
     get_holdings_snapshot,
     get_reconstructed_price_series,
     get_top_holdings,
@@ -35,7 +35,7 @@ CSV_CONTENT_TYPES = {
     "application/csv",
 }
 # Make immutable
-ALLOWED_PRICES_UPLOAD_FILENAMES = frozenset({"prices.csv"})
+ALLOWED_ETF_UPLOAD_FILENAMES = frozenset({"ETF1.csv", "ETF2.csv"})
 UPLOAD_READ_CHUNK_BYTES = 64 * 1024
 
 
@@ -131,80 +131,42 @@ def read_etf_top_holdings(
     return _handle_service_call(lambda: get_top_holdings(etf_id, limit))
 
 
-@router.post("/upload", response_model=UploadedAnalyticsBundleResponse)
+@router.post("/upload", response_model=UploadedEtfAnalyticsResponse)
 async def upload_etf_analytics(
-    etf1_file: UploadFile = File(...),
-    etf2_file: UploadFile = File(...),
-    prices_file: UploadFile = File(...),
+    etf_file: UploadFile = File(...),
     limit: int = Query(default=5, ge=1, le=10),
-) -> UploadedAnalyticsBundleResponse:
+) -> UploadedEtfAnalyticsResponse:
     """
-    Analyze an uploaded ETF bundle against an uploaded prices file.
+    Analyze one uploaded ETF weights file against the bundled prices file.
 
     Response:
     ```
-    UploadedAnalyticsBundleResponse(
-        source="upload",
-        prices_file_name="prices.csv",
-        top_holdings_limit=5,
-        items=[
-            UploadedEtfAnalyticsResponse(
-                etf_id="ETF1",
-                file_name="ETF1.csv",
-                latest_date="2024-01-31",
-                holdings=[...],
-                price_series=[...],
-                top_holdings=[...],
-            ),
-            UploadedEtfAnalyticsResponse(
-                etf_id="ETF2",
-                file_name="ETF2.csv",
-                latest_date="2024-01-31",
-                holdings=[...],
-                price_series=[...],
-                top_holdings=[...],
-            ),
-        ],
+    UploadedEtfAnalyticsResponse(
+        etf_id="ETF1",
+        file_name="ETF1.csv",
+        latest_date="2024-01-31",
+        holdings=[...],
+        price_series=[...],
+        top_holdings=[...],
     )
     ```
     """
-    etf1_filename = Path(etf1_file.filename or "ETF1.csv").name
-    etf1_staged_path = await _stage_csv_upload(
-        upload=etf1_file,
+    etf_filename = Path(etf_file.filename or "ETF1.csv").name
+    etf_staged_path = await _stage_csv_upload(
+        upload=etf_file,
         label="ETF weights",
-        allowed_filenames=frozenset({"ETF1.csv"}),
+        allowed_filenames=ALLOWED_ETF_UPLOAD_FILENAMES,
     )
-    etf2_staged_path = None
-    prices_staged_path = None
     try:
-        etf2_filename = Path(etf2_file.filename or "ETF2.csv").name
-        etf2_staged_path = await _stage_csv_upload(
-            upload=etf2_file,
-            label="ETF weights",
-            allowed_filenames=frozenset({"ETF2.csv"}),
-        )
-        prices_filename = Path(prices_file.filename or "prices.csv").name
-        prices_staged_path = await _stage_csv_upload(
-            upload=prices_file,
-            label="prices",
-            allowed_filenames=ALLOWED_PRICES_UPLOAD_FILENAMES,
-        )
-
         return _handle_upload_call(
-            lambda: analyze_uploaded_etf_bundle(
-                etf_file_paths={
-                    etf1_filename: etf1_staged_path,
-                    etf2_filename: etf2_staged_path,
-                },
-                prices_file_name=prices_filename,
-                prices_staged_path=prices_staged_path,
+            lambda: analyze_uploaded_etf(
+                etf_file_name=etf_filename,
+                etf_staged_path=etf_staged_path,
                 top_holdings_limit=limit,
             )
         )
     finally:
-        cleanup_staged_upload(etf1_staged_path)
-        cleanup_staged_upload(etf2_staged_path)
-        cleanup_staged_upload(prices_staged_path)
+        cleanup_staged_upload(etf_staged_path)
 
 
 def _handle_service_call(operation: Callable[[], ResponseT]) -> ResponseT:

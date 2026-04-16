@@ -1,12 +1,12 @@
 # ETF Titan
 
-ETF Titan is a single-page ETF analytics app built for the take-home exercise. 
+ETF Titan is a single-page ETF analytics app built for the take-home exercise.
 
-It lets a user inspect bundled ETF sample data or upload a strict three-file CSV bundle, then view holdings, reconstructed ETF prices, and top holdings derived from local constituent price history.
+It lets a user inspect bundled ETF sample data or upload a single ETF weights CSV, then view holdings, reconstructed ETF prices, and top holdings derived from the bundled local constituent price history.
 
 ## Product Scope
 
-- Upload `ETF1.csv`, `ETF2.csv`, and `prices.csv` together for analysis (or use the default, pre-loaded ones)
+- Upload `ETF1.csv` or `ETF2.csv` for analysis while reusing the bundled `prices.csv` (or use the default, pre-loaded ones)
 - View a holdings table with constituent name, weight, latest close, and latest holding value
 - Reconstruct ETF price history from constituent price history
 - Highlight the top 5 holdings by latest holding value
@@ -46,8 +46,9 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 - ETF weights are treated as static over time.
 - ETF reconstruction is the weighted sum of constituent prices for each date.
 - The latest ETF snapshot is derived from the last available row in `prices.csv`.
-- The pre-loaded datasets are not sensitive.
-- Uploaded data follows the same CSV shapes as the bundled fixtures.
+- `prices.csv` is the single source of truth for symbol prices.
+- The pre-loaded datasets are not sensitive. (I pushed them to repo for less setup, in a real project, I'd be careful with what data to push to repo.)
+- Uploaded ETF data follows the same CSV shape as the bundled ETF fixtures.
 - The app is intentionally scoped to a local take-home environment, so auth and external data integrations are out of scope.
 
 ## Bundled Data
@@ -58,7 +59,7 @@ The repo includes sample non-sensitive CSVs under `apps/server/storage/default/`
 - `ETF2.csv`
 - `prices.csv`
 
-These files allow the app to run immediately after setup and also act as the canonical shape for uploaded CSV validation. The user can also manually override the above CSVs.
+These files allow the app to run immediately after setup. The ETF sample files also act as the canonical shape for uploaded ETF CSV validation, while the bundled `prices.csv` remains the shared historical price source.
 
 
 ## Backend Overview

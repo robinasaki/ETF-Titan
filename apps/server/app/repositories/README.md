@@ -1,11 +1,11 @@
 # `server/app/repositories/`
 This folder contains the backend data access layer for ETF datasets.
-It is responsible for loading CSV data from disk, normalizing it into validated Pandas DataFrames, and managing the temp-to-perm upload flow used by the API.
+It is responsible for loading CSV data from disk, normalizing it into validated Pandas DataFrames, and managing the ETF upload staging flow used by the API.
 
 ### Responsibilities
 - Load the bundled ETF weights files from `server/storage/default/`
 - Load the bundled historical files from `server/storage/default/prices.csv`
-- Parse the uploaded ETF weights and prices CSV files from disk
+- Parse uploaded ETF weights CSV files from disk
 - Validate CSV structure and data quality before the server layer uses the data
 - Stage uploads in `server/storage/tmp/` and persist validated files into `server/storage/uploads/`
 
@@ -16,10 +16,10 @@ This caching applies only to the default server-side files:
 - `ETF1.csv`
 - `ETF2.csv`
 - `prices.csv`
-Uploaded CSV files are validated and parsed from disk on demand and are not cached.
+Uploaded ETF CSV files are validated and parsed from disk on demand and are not cached.
 
 ### Upload staging
-Uploaded files are first written into `server/storage/tmp`.
+Uploaded ETF files are first written into `server/storage/tmp`.
 
 They are validated from the disk before being prompted into `server/storage/uploads/`.
 
@@ -33,7 +33,7 @@ ETF weight files are validated for:
 - non-numeric weights
 - negative weights
 
-Historical priices files are validated for:
+Historical prices files are validated for:
 - required `DATE` column
 - at least one price column
 - duplicate columns
@@ -46,7 +46,8 @@ Historical priices files are validated for:
 - Constituent names are normalized to uppercase.
 - Price rows are sorted by date before being returned.
 - This layer focuses only on file access, parsing and validation; ETF calculations belong in the service layer.
-- Because the user can freely upload custom CSVs and the given CSVs don't have sensitive data, I included them in the repo.
+- `prices.csv` is always loaded from bundled storage so uploaded ETF analysis and built-in ETF analysis share the same price source.
+- Uploaded ETF weights are the only CSVs staged into temp and persisted into uploads.
 
 ### Main module
 - `csv_repository.py`: CSV-backed repository functions, upload staging helpers, and dataset validation logic

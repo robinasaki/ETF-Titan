@@ -107,17 +107,6 @@ def load_uploaded_etf_weights_frame(path: Path) -> pd.DataFrame:
     return _normalize_weights_frame(frame)
 
 
-def load_uploaded_prices_frame(path: Path) -> pd.DataFrame:
-    """Load a staged uploaded prices CSV from disk."""
-    _require_existing_file(path)
-
-    try:
-        frame = pd.read_csv(path, parse_dates=["DATE"], encoding="utf-8-sig")
-    except (ParserError, ValueError, UnicodeDecodeError) as exc:
-        raise DatasetValidationError("Uploaded prices CSV could not be parsed.") from exc
-    return _normalize_prices_frame(frame)
-
-
 def persist_validated_upload(staged_path: Path, filename: str) -> Path:
     """Promote a validated staged upload into permanent server-side storage."""
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)

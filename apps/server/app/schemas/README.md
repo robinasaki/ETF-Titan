@@ -12,7 +12,6 @@ The main models in `etf.py` are:
 - `PriceSeriesPoint` and `PriceSeriesResponse`: reconstructed price-series responses
 - `TopHoldingsResponse`: ranked top-holdings response
 - `UploadedEtfAnalyticsResponse`: analytics for one uploaded ETF file
-- `UploadedAnalyticsBundleResponse`: combined response for the required uploaded bundle of `ETF1.csv`, `ETF2.csv`, and `prices.csv`
 
 ## Design choices
 

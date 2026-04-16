@@ -6,7 +6,7 @@ from app.routers.etfs import router as etfs_router
 
 app = FastAPI(
     title="ETF Titan API",
-    description="FastAPI backend for ETF analytics over bundled or uploaded CSV datasets.",
+    description="FastAPI backend for ETF analytics over bundled prices data and bundled or uploaded ETF weights CSV datasets.",
     version="0.3.0",
 )
 
