@@ -16,7 +16,9 @@
     "build": "bun run build:web",
     "build:web": "bun --cwd apps/web build",
     "check": "tsc -b --pretty false",
-    "test": "bash scripts/test.sh"
+    "test": "bash scripts/test.sh",
+    "load": "bash scripts/load-test.sh",
+    "load:test": "bash scripts/load-test.sh"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
