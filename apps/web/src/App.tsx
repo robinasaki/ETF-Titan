@@ -1,6 +1,5 @@
-import { APP_NAME } from "./constants/app";
-import { AppButton } from "./components/Buttons/AppButton";
 import { useEffect, useState } from "react";
+import { Text, YStack } from "tamagui";
 
 const sections = [
   "ETF upload",
@@ -25,7 +24,7 @@ export default function App() {
     <main className="app-shell">
       <section className="grid">
         {holdings.map((holding, idx) => (
-          <p key={idx}>{JSON.stringify(holding)}</p>
+          <Text key={idx}>{JSON.stringify(holding)}</Text>
         ))}
       </section>
     </main>
