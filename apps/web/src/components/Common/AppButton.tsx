@@ -17,6 +17,7 @@ import { Button as TamaguiButton, Text, XStack, styled, useTheme } from "tamagui
 
 type AppButtonTone = "primary" | "danger" | "ghost";
 type AppButtonIcon = ComponentType<IconProps>;
+type AppButtonCursor = "pointer" | "not-allowed";
 
 const DEFAULT_BUTTON_MAX_WIDTH = 360;
 const BUTTON_ICON_SIZE = 18;
@@ -28,6 +29,8 @@ type AppButtonProps = PropsWithChildren<{
   maxWidth?: number | string;
   onPress?: () => void;
   ariaLabel?: string;
+  disabled?: boolean;
+  cursor?: AppButtonCursor;
 }>;
 
 const AppButtonFrame = styled(TamaguiButton, {
@@ -50,6 +53,8 @@ export function AppButton({
   maxWidth = DEFAULT_BUTTON_MAX_WIDTH,
   onPress,
   ariaLabel,
+  disabled = false,
+  cursor,
 }: AppButtonProps) {
   const theme = useTheme();
   const isDanger = tone === "danger";
@@ -70,16 +75,19 @@ export function AppButton({
     <AppButtonFrame
       maxWidth={maxWidth}
       onPress={onPress}
+      disabled={disabled}
       backgroundColor={defaultBackground}
       borderWidth={0}
+      opacity={disabled ? 0.5 : 1}
+      cursor={disabled ? "not-allowed" : cursor}
       aria-label={ariaLabel}
       hoverStyle={{
         backgroundColor: hoverBackground,
-        opacity: isGhost ? 0.9 : 1,
+        opacity: disabled ? 0.5 : isGhost ? 0.9 : 1,
       }}
       pressStyle={{
         backgroundColor: pressBackground,
-        opacity: isGhost ? 0.75 : 1,
+        opacity: disabled ? 0.5 : isGhost ? 0.75 : 1,
         scale: 0.98,
       }}
     >
