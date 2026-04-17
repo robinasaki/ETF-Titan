@@ -11,7 +11,12 @@ import {
 } from "tamagui";
 import { useETFHoldings } from "../../hooks/getETFHoldings";
 import { AppInput } from "../Common/AppInput";
-import { IconAdjustmentsHorizontal, IconArrowLeft } from "@tabler/icons-react";
+import {
+    IconAdjustmentsHorizontal,
+    IconArrowLeft,
+    IconChevronDown,
+    IconChevronRight,
+} from "@tabler/icons-react";
 
 type SortKey = "name" | "weight" | "latest_close";
 type SortDirection = "asc" | "desc";
@@ -53,6 +58,7 @@ const CONTROLS_COLUMN_WIDTH = 260;
 const COLLAPSED_CONTROLS_TOGGLE_WIDTH = 52;
 const HOLDINGS_ROWS_MAX_HEIGHT = 720;
 const ETF_SELECTOR_MAX_HEIGHT = 420;
+const TABLE_BODY_EXPANDED_MAX_HEIGHT = 1200;
 const CONTROLS_TOGGLE_TRANSITION = "220ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
@@ -199,6 +205,7 @@ export function ETFTable() {
     const [searchValue, setSearchValue] = useState("");
     const [activeSort, setActiveSort] = useState<SortState>(INITIAL_SORT);
     const [isControlsExpanded, setIsControlsExpanded] = useState(true);
+    const [isTableExpanded, setIsTableExpanded] = useState(true);
     const isLoading = isLoadingCatalog || isLoadingHoldings;
 
     const visibleHoldings = useMemo(() => {
@@ -266,284 +273,352 @@ export function ETFTable() {
             >
                 <XStack
                     alignItems="center"
-                    justifyContent="space-between"
+                    justifyContent="flex-start"
+                    flexWrap="nowrap"
                     paddingHorizontal={18}
                     paddingVertical={14}
                     backgroundColor={theme.panePrimary}
+                    overflow="hidden"
                 >
-                    <XStack alignItems="center" gap={12}>
-                        <Text color={theme.paneTextPrimary} fontSize={14} fontWeight="600">
+                    <XStack alignItems="center" gap={12} minWidth={0} flex={1}>
+                        <Text
+                            color={theme.paneTextPrimary}
+                            fontSize={14}
+                            fontWeight="600"
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            flexShrink={1}
+                        >
                             {activeEtfId || "Loading ETFs"}
                         </Text>
                     </XStack>
 
-                    <XStack alignItems="center" gap={10}>
+                    <XStack
+                        alignItems="center"
+                        gap={10}
+                        minWidth={0}
+                        marginLeft="auto"
+                        flexShrink={0}
+                        flexWrap="nowrap"
+                    >
                         {isLoading ? (
                             <Spinner color={theme.paneTextPrimary?.val} size="small" />
                         ) : null}
 
-                        <Text color={theme.paneTextPrimary} fontSize={14}>
-                            {summaryLabel}
-                        </Text>
+                        <Button
+                            unstyled
+                            onPress={() => {
+                                setIsTableExpanded((currentValue) => !currentValue);
+                            }}
+                            padding={2}
+                            background="transparent"
+                            borderWidth={0}
+                            hoverStyle={{
+                                opacity: 0.85,
+                            }}
+                            pressStyle={{
+                                opacity: 0.7,
+                            }}
+                            cursor="pointer"
+                            aria-label={isTableExpanded ? "Collapse table" : "Expand table"}
+                            minWidth={0}
+                            maxWidth={280}
+                        >
+                            <XStack alignItems="center" gap={6} flexWrap="nowrap" minWidth={0}>
+                                <Text
+                                    color={theme.paneTextPrimary}
+                                    fontSize={14}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                    paddingRight={6}
+                                >
+                                    {summaryLabel}
+                                </Text>
+
+                                {isTableExpanded ? (
+                                    <IconChevronDown
+                                        color={theme.paneTextPrimary?.val}
+                                        size={16}
+                                        strokeWidth={2}
+                                    />
+                                ) : (
+                                    <IconChevronRight
+                                        color={theme.paneTextPrimary?.val}
+                                        size={16}
+                                        strokeWidth={2}
+                                    />
+                                )}
+                            </XStack>
+                        </Button>
                     </XStack>
                 </XStack>
 
-                {errorMessage ? (
-                    <YStack gap={14} padding={24}>
-                        <Text color={theme.red10} fontSize={16} fontWeight="600">
-                            {errorMessage}
-                        </Text>
+                <YStack
+                    maxHeight={isTableExpanded ? TABLE_BODY_EXPANDED_MAX_HEIGHT : 0}
+                    opacity={isTableExpanded ? 1 : 0}
+                    overflow="hidden"
+                    pointerEvents={isTableExpanded ? "auto" : "none"}
+                    style={{
+                        transition: `max-height ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
+                    }}
+                >
+                    {errorMessage ? (
+                        <YStack gap={14} padding={24}>
+                            <Text color={theme.red10} fontSize={16} fontWeight="600">
+                                {errorMessage}
+                            </Text>
 
-                        <XStack>
-                            <Button
-                                onPress={() => {
-                                    void refreshHoldings();
-                                }}
-                                backgroundColor={theme.panePrimary}
-                                borderRadius={12}
-                                cursor="pointer"
-                                hoverStyle={{
-                                    backgroundColor: theme.paneHover,
-                                }}
-                                pressStyle={{
-                                    backgroundColor: theme.paneHover,
-                                    scale: 0.98,
-                                }}
-                            >
-                                <Text color={theme.paneTextPrimary} fontSize={14} fontWeight="600">
-                                    Retry
-                                </Text>
-                            </Button>
-                        </XStack>
-                    </YStack>
-                ) : (
-                    <ScrollView horizontal contentContainerStyle={{ minWidth: "100%" }}>
-                        <XStack minWidth={combinedTableMinWidth} width="100%" flex={1}>
-                            <YStack
-                                width={controlsColumnWidth}
-                                minWidth={controlsColumnWidth}
-                                opacity={controlsPaneOpacity}
-                                overflow="hidden"
-                                pointerEvents={isControlsExpanded ? "auto" : "none"}
-                                style={{
-                                    transition: `width ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
-                                }}
-                            >
-                                <YStack
-                                    width={CONTROLS_COLUMN_WIDTH}
-                                    minWidth={CONTROLS_COLUMN_WIDTH}
-                                    borderRightWidth={1}
-                                    borderRightColor={theme.paneBorderPrimary}
+                            <XStack>
+                                <Button
+                                    onPress={() => {
+                                        void refreshHoldings();
+                                    }}
+                                    backgroundColor={theme.panePrimary}
+                                    borderRadius={12}
+                                    cursor="pointer"
+                                    hoverStyle={{
+                                        backgroundColor: theme.paneHover,
+                                    }}
+                                    pressStyle={{
+                                        backgroundColor: theme.paneHover,
+                                        scale: 0.98,
+                                    }}
                                 >
-                                    <XStack>
+                                    <Text color={theme.paneTextPrimary} fontSize={14} fontWeight="600">
+                                        Retry
+                                    </Text>
+                                </Button>
+                            </XStack>
+                        </YStack>
+                    ) : (
+                        <ScrollView horizontal contentContainerStyle={{ minWidth: "100%" }}>
+                            <XStack minWidth={combinedTableMinWidth} width="100%" flex={1}>
+                                <YStack
+                                    width={controlsColumnWidth}
+                                    minWidth={controlsColumnWidth}
+                                    opacity={controlsPaneOpacity}
+                                    overflow="hidden"
+                                    pointerEvents={isControlsExpanded ? "auto" : "none"}
+                                    style={{
+                                        transition: `width ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
+                                    }}
+                                >
+                                    <YStack
+                                        width={CONTROLS_COLUMN_WIDTH}
+                                        minWidth={CONTROLS_COLUMN_WIDTH}
+                                        borderRightWidth={1}
+                                        borderRightColor={theme.paneBorderPrimary}
+                                    >
+                                        <XStack>
+                                            <Button
+                                                onPress={() => {
+                                                    setIsControlsExpanded(false);
+                                                }}
+                                                width="100%"
+                                                justifyContent="flex-start"
+                                                alignItems="center"
+                                                borderRadius={0}
+                                                background={theme.paneSecondary?.val}
+                                                paddingVertical={26}
+                                                icon={
+                                                    <IconArrowLeft
+                                                        color={theme.textPaneSecondary?.val}
+                                                        size={18}
+                                                        strokeWidth={2}
+                                                    />
+                                                }
+                                            >
+                                                <Text color={theme.textPaneSecondary?.val} fontSize={16}>
+                                                    Controls
+                                                </Text>
+                                            </Button>
+                                        </XStack>
+
+                                        <YStack>
+                                            <YStack padding={16}>
+                                                <YStack>
+                                                    <XStack marginTop={6}>
+                                                        <Text color={theme.textPrimary} fontSize={16} fontWeight="700">
+                                                            ETF Table
+                                                        </Text>
+                                                    </XStack>
+
+                                                    <XStack marginTop={6}>
+                                                        <Text color={theme.textSecondary} fontSize={14}>
+                                                            Select a bundled ETF and filter the visible symbols.
+                                                        </Text>
+                                                    </XStack>
+                                                </YStack>
+                                            </YStack>
+
+                                            <YStack paddingHorizontal={10}>
+                                                <AppInput
+                                                    value={searchValue}
+                                                    onChangeText={setSearchValue}
+                                                    placeholder="Search a symbol..."
+                                                />
+                                            </YStack>
+
+                                            <ScrollView
+                                                maxHeight={ETF_SELECTOR_MAX_HEIGHT}
+                                                showsVerticalScrollIndicator
+                                            >
+                                                <YStack gap={10}>
+                                                    {etfs.map((etf) => {
+                                                        return (
+                                                            <ETFRow
+                                                                key={etf.id}
+                                                                etf={etf}
+                                                                isActive={etf.id === activeEtfId}
+                                                                onPress={setActiveEtfId}
+                                                            />
+                                                        );
+                                                    })}
+                                                </YStack>
+                                            </ScrollView>
+                                        </YStack>
+                                    </YStack>
+                                </YStack>
+
+                                <YStack position="relative" flex={1} minWidth={DATA_TABLE_MIN_WIDTH}>
+                                    <YStack
+                                        position="absolute"
+                                        top={0}
+                                        left={0}
+                                        zIndex={10}
+                                        opacity={collapsedToggleOpacity}
+                                        pointerEvents={isControlsExpanded ? "none" : "auto"}
+                                        style={{
+                                            transition: `opacity ${CONTROLS_TOGGLE_TRANSITION}`,
+                                        }}
+                                    >
                                         <Button
-                                            onPress={() => {
-                                                setIsControlsExpanded(false);
-                                            }}
-                                            width="100%"
-                                            justifyContent="flex-start"
-                                            alignItems="center"
                                             borderRadius={0}
                                             background={theme.paneSecondary?.val}
-                                            paddingVertical={26}
+                                            height={COLLAPSED_CONTROLS_TOGGLE_WIDTH}
+                                            width={COLLAPSED_CONTROLS_TOGGLE_WIDTH}
+                                            justifyContent="center"
+                                            padding={0}
                                             icon={
-                                                <IconArrowLeft
+                                                <IconAdjustmentsHorizontal
                                                     color={theme.textPaneSecondary?.val}
-                                                    size={18}
+                                                    size={20}
                                                     strokeWidth={2}
                                                 />
                                             }
-                                        >
-                                            <Text color={theme.textPaneSecondary?.val} fontSize={16}>
-                                                Controls
-                                            </Text>
-                                        </Button>
+                                            onPress={() => {
+                                                setIsControlsExpanded(true);
+                                            }}
+                                        />
+                                    </YStack>
+
+                                    <XStack
+                                        width="100%"
+                                        backgroundColor={theme.background}
+                                        borderBottomWidth={1}
+                                        borderBottomColor={theme.paneBorderPrimary}
+                                    >
+                                        <HeaderCell
+                                            activeSort={activeSort}
+                                            label="Symbol"
+                                            sortKey="name"
+                                            width={SYMBOL_COLUMN_WIDTH}
+                                            onPress={handleSortPress}
+                                        />
+
+                                        <HeaderCell
+                                            activeSort={activeSort}
+                                            label="Weight"
+                                            sortKey="weight"
+                                            width={WEIGHT_COLUMN_WIDTH}
+                                            onPress={handleSortPress}
+                                        />
+
+                                        <HeaderCell
+                                            activeSort={activeSort}
+                                            label="Latest Close"
+                                            sortKey="latest_close"
+                                            width={CLOSE_COLUMN_WIDTH}
+                                            onPress={handleSortPress}
+                                        />
                                     </XStack>
 
-                                    <YStack>
-                                        <YStack padding={16}>
-                                            <YStack>
-                                                <XStack marginTop={6}>
-                                                    <Text color={theme.textPrimary} fontSize={16} fontWeight="700">
-                                                        ETF Table
-                                                    </Text>
-                                                </XStack>
-
-                                                <XStack marginTop={6}>
-                                                    <Text color={theme.textSecondary} fontSize={14}>
-                                                        Select a bundled ETF and filter the visible symbols.
-                                                    </Text>
-                                                </XStack>
-                                            </YStack>
+                                    {holdingsCount === 0 && !isLoadingHoldings ? (
+                                        <YStack padding={24}>
+                                            <Text color={theme.textPrimary} fontSize={15}>
+                                                No holdings matched the current filter.
+                                            </Text>
                                         </YStack>
-
-                                        <YStack paddingHorizontal={10}>
-                                            <AppInput
-                                                value={searchValue}
-                                                onChangeText={setSearchValue}
-                                                placeholder="Search a symbol..."
-                                            />
-                                        </YStack>
-
+                                    ) : (
                                         <ScrollView
-                                            maxHeight={ETF_SELECTOR_MAX_HEIGHT}
+                                            maxHeight={HOLDINGS_ROWS_MAX_HEIGHT}
                                             showsVerticalScrollIndicator
                                         >
-                                            <YStack gap={10}>
-                                                {etfs.map((etf) => {
-                                                    return (
-                                                        <ETFRow
-                                                            key={etf.id}
-                                                            etf={etf}
-                                                            isActive={etf.id === activeEtfId}
-                                                            onPress={setActiveEtfId}
-                                                        />
-                                                    );
-                                                })}
-                                            </YStack>
+                                            {visibleHoldings.map((holding, index) => (
+                                                <YStack key={`${holding.name}-${holding.weight}`}>
+                                                    <XStack
+                                                        width="100%"
+                                                        alignItems="center"
+                                                        minHeight={60}
+                                                        paddingVertical={6}
+                                                        backgroundColor={
+                                                            index % 2 === 0 ? theme.background : "transparent"
+                                                        }
+                                                        hoverStyle={{
+                                                            backgroundColor: theme.paneHover,
+                                                        }}
+                                                    >
+                                                        <XStack
+                                                            width={SYMBOL_COLUMN_WIDTH}
+                                                            paddingHorizontal={18}
+                                                            justifyContent="flex-start"
+                                                        >
+                                                            <Text
+                                                                color={theme.color}
+                                                                fontSize={15}
+                                                                fontWeight="600"
+                                                            >
+                                                                {holding.name}
+                                                            </Text>
+                                                        </XStack>
+
+                                                        <XStack
+                                                            width={WEIGHT_COLUMN_WIDTH}
+                                                            paddingHorizontal={18}
+                                                            justifyContent="flex-end"
+                                                        >
+                                                            <Text color={theme.color} fontSize={15}>
+                                                                {formatWeight(holding.weight)}
+                                                            </Text>
+                                                        </XStack>
+
+                                                        <XStack
+                                                            width={CLOSE_COLUMN_WIDTH}
+                                                            paddingHorizontal={18}
+                                                            justifyContent="flex-end"
+                                                        >
+                                                            <Text
+                                                                color={theme.color}
+                                                                fontSize={15}
+                                                                fontWeight="500"
+                                                            >
+                                                                ${formatLatestClose(holding.latest_close)}
+                                                            </Text>
+                                                        </XStack>
+                                                    </XStack>
+
+                                                    {index < holdingsCount - 1 ? (
+                                                        <Separator borderColor={theme.paneBorderPrimary} />
+                                                    ) : null}
+                                                </YStack>
+                                            ))}
                                         </ScrollView>
-                                    </YStack>
+                                    )}
                                 </YStack>
-                            </YStack>
-
-                            <YStack position="relative" flex={1} minWidth={DATA_TABLE_MIN_WIDTH}>
-                                <YStack
-                                    position="absolute"
-                                    top={0}
-                                    left={0}
-                                    zIndex={10}
-                                    opacity={collapsedToggleOpacity}
-                                    pointerEvents={isControlsExpanded ? "none" : "auto"}
-                                    style={{
-                                        transition: `opacity ${CONTROLS_TOGGLE_TRANSITION}`,
-                                    }}
-                                >
-                                    <Button
-                                        borderRadius={0}
-                                        background={theme.paneSecondary?.val}
-                                        height={COLLAPSED_CONTROLS_TOGGLE_WIDTH}
-                                        width={COLLAPSED_CONTROLS_TOGGLE_WIDTH}
-                                        justifyContent="center"
-                                        padding={0}
-                                        icon={
-                                            <IconAdjustmentsHorizontal
-                                                color={theme.textPaneSecondary?.val}
-                                                size={20}
-                                                strokeWidth={2}
-                                            />
-                                        }
-                                        onPress={() => {
-                                            setIsControlsExpanded(true);
-                                        }}
-                                    />
-                                </YStack>
-
-                                <XStack
-                                    width="100%"
-                                    backgroundColor={theme.background}
-                                    borderBottomWidth={1}
-                                    borderBottomColor={theme.paneBorderPrimary}
-                                >
-                                    <HeaderCell
-                                        activeSort={activeSort}
-                                        label="Symbol"
-                                        sortKey="name"
-                                        width={SYMBOL_COLUMN_WIDTH}
-                                        onPress={handleSortPress}
-                                    />
-
-                                    <HeaderCell
-                                        activeSort={activeSort}
-                                        label="Weight"
-                                        sortKey="weight"
-                                        width={WEIGHT_COLUMN_WIDTH}
-                                        onPress={handleSortPress}
-                                    />
-
-                                    <HeaderCell
-                                        activeSort={activeSort}
-                                        label="Latest Close"
-                                        sortKey="latest_close"
-                                        width={CLOSE_COLUMN_WIDTH}
-                                        onPress={handleSortPress}
-                                    />
-                                </XStack>
-
-                                {holdingsCount === 0 && !isLoadingHoldings ? (
-                                    <YStack padding={24}>
-                                        <Text color={theme.textPrimary} fontSize={15}>
-                                            No holdings matched the current filter.
-                                        </Text>
-                                    </YStack>
-                                ) : (
-                                    <ScrollView
-                                        maxHeight={HOLDINGS_ROWS_MAX_HEIGHT}
-                                        showsVerticalScrollIndicator
-                                    >
-                                        {visibleHoldings.map((holding, index) => (
-                                            <YStack key={`${holding.name}-${holding.weight}`}>
-                                                <XStack
-                                                    width="100%"
-                                                    alignItems="center"
-                                                    minHeight={60}
-                                                    paddingVertical={6}
-                                                    backgroundColor={
-                                                        index % 2 === 0 ? theme.background : "transparent"
-                                                    }
-                                                    hoverStyle={{
-                                                        backgroundColor: theme.paneHover,
-                                                    }}
-                                                >
-                                                    <XStack
-                                                        width={SYMBOL_COLUMN_WIDTH}
-                                                        paddingHorizontal={18}
-                                                        justifyContent="flex-start"
-                                                    >
-                                                        <Text
-                                                            color={theme.color}
-                                                            fontSize={15}
-                                                            fontWeight="600"
-                                                        >
-                                                            {holding.name}
-                                                        </Text>
-                                                    </XStack>
-
-                                                    <XStack
-                                                        width={WEIGHT_COLUMN_WIDTH}
-                                                        paddingHorizontal={18}
-                                                        justifyContent="flex-end"
-                                                    >
-                                                        <Text color={theme.color} fontSize={15}>
-                                                            {formatWeight(holding.weight)}
-                                                        </Text>
-                                                    </XStack>
-
-                                                    <XStack
-                                                        width={CLOSE_COLUMN_WIDTH}
-                                                        paddingHorizontal={18}
-                                                        justifyContent="flex-end"
-                                                    >
-                                                        <Text
-                                                            color={theme.color}
-                                                            fontSize={15}
-                                                            fontWeight="500"
-                                                        >
-                                                            ${formatLatestClose(holding.latest_close)}
-                                                        </Text>
-                                                    </XStack>
-                                                </XStack>
-
-                                                {index < holdingsCount - 1 ? (
-                                                    <Separator borderColor={theme.paneBorderPrimary} />
-                                                ) : null}
-                                            </YStack>
-                                        ))}
-                                    </ScrollView>
-                                )}
-                            </YStack>
-                        </XStack>
-                    </ScrollView>
-                )}
+                            </XStack>
+                        </ScrollView>
+                    )}
+                </YStack>
             </YStack>
         </YStack>
     );
