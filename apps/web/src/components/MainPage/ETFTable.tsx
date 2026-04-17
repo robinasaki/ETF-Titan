@@ -10,6 +10,7 @@ import {
     useTheme,
 } from "tamagui";
 import { useETFHoldings } from "../../hooks/getETFHoldings";
+import { AppButton } from "../Common/AppButton";
 import { AppInput } from "../Common/AppInput";
 import {
     IconAdjustmentsHorizontal,
@@ -305,32 +306,35 @@ export function ETFTable() {
                             <Spinner color={theme.paneTextPrimary?.val} size="small" />
                         ) : null}
 
-                        <Button
-                            unstyled
+                        <AppButton
+                            tone="ghost"
                             onPress={() => {
                                 setIsTableExpanded((currentValue) => !currentValue);
                             }}
-                            padding={2}
-                            background="transparent"
-                            borderWidth={0}
-                            hoverStyle={{
-                                opacity: 0.85,
-                            }}
-                            pressStyle={{
-                                opacity: 0.7,
-                            }}
-                            cursor="pointer"
-                            aria-label={isTableExpanded ? "Collapse table" : "Expand table"}
-                            minWidth={0}
-                            maxWidth={280}
+                            ariaLabel={isTableExpanded ? "Collapse table" : "Expand table"}
+                            maxWidth={300}
                         >
-                            <XStack alignItems="center" gap={6} flexWrap="nowrap" minWidth={0}>
+                            <XStack
+                                alignItems="center"
+                                gap={6}
+                                flexWrap="nowrap"
+                                minWidth={0}
+                                overflow="hidden"
+                                justifyContent="center"
+                            >
                                 <Text
                                     color={theme.paneTextPrimary}
                                     fontSize={14}
                                     numberOfLines={1}
                                     ellipsizeMode="tail"
+                                    minWidth={0}
+                                    flexShrink={1}
                                     paddingRight={6}
+                                    style={{
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                    }}
                                 >
                                     {summaryLabel}
                                 </Text>
@@ -340,16 +344,22 @@ export function ETFTable() {
                                         color={theme.paneTextPrimary?.val}
                                         size={16}
                                         strokeWidth={2}
+                                        style={{
+                                            flexShrink: 0,
+                                        }}
                                     />
                                 ) : (
                                     <IconChevronRight
                                         color={theme.paneTextPrimary?.val}
                                         size={16}
                                         strokeWidth={2}
+                                        style={{
+                                            flexShrink: 0,
+                                        }}
                                     />
                                 )}
                             </XStack>
-                        </Button>
+                        </AppButton>
                     </XStack>
                 </XStack>
 

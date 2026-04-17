@@ -15,7 +15,7 @@ import {
 import type { IconProps } from "@tabler/icons-react";
 import { Button as TamaguiButton, Text, XStack, styled, useTheme } from "tamagui";
 
-type AppButtonTone = "primary" | "danger";
+type AppButtonTone = "primary" | "danger" | "ghost";
 type AppButtonIcon = ComponentType<IconProps>;
 
 const DEFAULT_BUTTON_MAX_WIDTH = 360;
@@ -27,6 +27,7 @@ type AppButtonProps = PropsWithChildren<{
   icon?: AppButtonIcon;
   maxWidth?: number | string;
   onPress?: () => void;
+  ariaLabel?: string;
 }>;
 
 const AppButtonFrame = styled(TamaguiButton, {
@@ -48,9 +49,18 @@ export function AppButton({
   icon,
   maxWidth = DEFAULT_BUTTON_MAX_WIDTH,
   onPress,
+  ariaLabel,
 }: AppButtonProps) {
   const theme = useTheme();
   const isDanger = tone === "danger";
+  const isGhost = tone === "ghost";
+  const defaultBackground = isDanger
+    ? theme.red10
+    : isGhost
+      ? "transparent"
+      : theme.panePrimary;
+  const hoverBackground = isDanger ? theme.red9 : isGhost ? theme.paneSecondary : theme.paneHover;
+  const pressBackground = isDanger ? theme.red8 : isGhost ? theme.paneSecondary : theme.paneHover;
   const Icon = icon;
   const hasTextLabel = typeof children === "string" || typeof children === "number";
   const hasChildren = children !== null && children !== undefined && typeof children !== "boolean";
@@ -60,12 +70,16 @@ export function AppButton({
     <AppButtonFrame
       maxWidth={maxWidth}
       onPress={onPress}
-      backgroundColor={isDanger ? theme.red10 : theme.panePrimary}
+      backgroundColor={defaultBackground}
+      borderWidth={0}
+      aria-label={ariaLabel}
       hoverStyle={{
-        backgroundColor: isDanger ? theme.red9 : theme.paneHover,
+        backgroundColor: hoverBackground,
+        opacity: isGhost ? 0.9 : 1,
       }}
       pressStyle={{
-        backgroundColor: isDanger ? theme.red8 : theme.paneHover,
+        backgroundColor: pressBackground,
+        opacity: isGhost ? 0.75 : 1,
         scale: 0.98,
       }}
     >
