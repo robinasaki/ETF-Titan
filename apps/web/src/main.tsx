@@ -11,8 +11,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">
       <YStack
-        marginVertical={12}
-        marginHorizontal={24}
+        paddingHorizontal={24}
         minHeight="100vh"
         backgroundColor="$background"
       >

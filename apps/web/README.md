@@ -10,3 +10,4 @@
 - Catalog request uses `AbortController` cleanup to avoid stale state updates after unmount.
 - Memotization on hook returns.
 - Scrollview to prevent overflow on ETFTable.
+- Use only Tamagui components. Register UI definitions through only the Tamagui props, unless injecting to React styles is absolutely necessary. Use only Tamagui animation props tokens since we're centralizing the UI and colour.

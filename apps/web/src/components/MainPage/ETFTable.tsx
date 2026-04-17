@@ -36,6 +36,7 @@ type ETFRowData = {
 
 type ETFRowProps = {
     etf: ETFRowData;
+    isActive: boolean;
     onPress: (etfId: string) => void;
 };
 
@@ -52,6 +53,7 @@ const CONTROLS_COLUMN_WIDTH = 260;
 const COLLAPSED_CONTROLS_TOGGLE_WIDTH = 52;
 const HOLDINGS_ROWS_MAX_HEIGHT = 720;
 const ETF_SELECTOR_MAX_HEIGHT = 420;
+const CONTROLS_TOGGLE_TRANSITION = "220ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
  * Format helper for the weight column.
@@ -153,8 +155,10 @@ function HeaderCell({
     );
 }
 
-function ETFRow({ etf, onPress }: ETFRowProps) {
+function ETFRow({ etf, isActive, onPress }: ETFRowProps) {
     const theme = useTheme();
+    const defaultBackgroundColor = theme.background?.val;
+    const activeBackgroundColor = theme.paneSecondary?.val;
 
     return (
         <Button
@@ -165,7 +169,7 @@ function ETFRow({ etf, onPress }: ETFRowProps) {
             paddingVertical={24}
             marginVertical={12}
             width="100%"
-            backgroundColor={theme.background}
+            backgroundColor={isActive ? activeBackgroundColor : defaultBackgroundColor}
             borderWidth={0}
             hoverStyle={{
                 backgroundColor: theme.paneHover,
@@ -222,6 +226,8 @@ export function ETFTable() {
 
     // Control pane collapse-expand logics
     const controlsColumnWidth = isControlsExpanded ? CONTROLS_COLUMN_WIDTH : 0;
+    const controlsPaneOpacity = isControlsExpanded ? 1 : 0;
+    const collapsedToggleOpacity = isControlsExpanded ? 0 : 1;
     const combinedTableMinWidth = controlsColumnWidth + DATA_TABLE_MIN_WIDTH;
 
     // Handle sort
@@ -313,10 +319,19 @@ export function ETFTable() {
                 ) : (
                     <ScrollView horizontal contentContainerStyle={{ minWidth: "100%" }}>
                         <XStack minWidth={combinedTableMinWidth} width="100%" flex={1}>
-                            {isControlsExpanded ? (
+                            <YStack
+                                width={controlsColumnWidth}
+                                minWidth={controlsColumnWidth}
+                                opacity={controlsPaneOpacity}
+                                overflow="hidden"
+                                pointerEvents={isControlsExpanded ? "auto" : "none"}
+                                style={{
+                                    transition: `width ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
+                                }}
+                            >
                                 <YStack
-                                    width={controlsColumnWidth}
-                                    minWidth={controlsColumnWidth}
+                                    width={CONTROLS_COLUMN_WIDTH}
+                                    minWidth={CONTROLS_COLUMN_WIDTH}
                                     borderRightWidth={1}
                                     borderRightColor={theme.paneBorderPrimary}
                                 >
@@ -380,6 +395,7 @@ export function ETFTable() {
                                                         <ETFRow
                                                             key={etf.id}
                                                             etf={etf}
+                                                            isActive={etf.id === activeEtfId}
                                                             onPress={setActiveEtfId}
                                                         />
                                                     );
@@ -388,15 +404,21 @@ export function ETFTable() {
                                         </ScrollView>
                                     </YStack>
                                 </YStack>
-                            ) : null}
+                            </YStack>
 
                             <YStack position="relative" flex={1} minWidth={DATA_TABLE_MIN_WIDTH}>
-                                {!isControlsExpanded ? (
+                                <YStack
+                                    position="absolute"
+                                    top={0}
+                                    left={0}
+                                    zIndex={10}
+                                    opacity={collapsedToggleOpacity}
+                                    pointerEvents={isControlsExpanded ? "none" : "auto"}
+                                    style={{
+                                        transition: `opacity ${CONTROLS_TOGGLE_TRANSITION}`,
+                                    }}
+                                >
                                     <Button
-                                        position="absolute"
-                                        top={0}
-                                        left={0}
-                                        zIndex={10}
                                         borderRadius={0}
                                         background={theme.paneSecondary?.val}
                                         height={COLLAPSED_CONTROLS_TOGGLE_WIDTH}
@@ -413,9 +435,8 @@ export function ETFTable() {
                                         onPress={() => {
                                             setIsControlsExpanded(true);
                                         }}
-                                    >
-                                    </Button>
-                                ) : null}
+                                    />
+                                </YStack>
 
                                 <XStack
                                     width="100%"
