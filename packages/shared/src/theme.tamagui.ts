@@ -21,9 +21,14 @@ const appFonts = {
  */
 const darkThemeTokens = {
   background: "rgb(30, 30, 30)",
-  textPrimary: "rgb(95, 95, 95)",
+  textPrimary: "rgb(255, 255, 255)",
+  textPaneSecondary: "rgb(180, 180, 180)",
+  textMuted: "rgb(140, 140, 140)",
+
+  textReversePrimary: "rgb(30, 30, 30)",
 
   panePrimary: "rgb(102, 102, 102)",
+  paneSecondary: "rgb(60, 60, 60)",
   paneHover: "rgb(140, 140, 140)",
   paneBorderPrimary: "rgb(135, 135, 135)",
   paneTextPrimary: "rgb(200, 200, 200)",

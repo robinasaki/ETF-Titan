@@ -8,23 +8,15 @@
  * <AppButton maxWidth={280}>Review reconstructed holdings</AppButton>
  * ```
  */
-import type { PropsWithChildren } from "react";
+import {
+  type ComponentType,
+  type PropsWithChildren,
+} from "react";
+import type { IconProps } from "@tabler/icons-react";
 import { Button as TamaguiButton, Text, XStack, styled, useTheme } from "tamagui";
 
 type AppButtonTone = "primary" | "danger";
-
-/**
- * Put the button usage here
- */
-type AppButtonEmoji = "plus";
-
-import {
-  IconPlus,
-} from "@tabler/icons-react";
-
-const buttonEmojiIcons = {
-  plus: IconPlus
-} as const;
+type AppButtonIcon = ComponentType<IconProps>;
 
 const DEFAULT_BUTTON_MAX_WIDTH = 360;
 const BUTTON_ICON_SIZE = 18;
@@ -32,16 +24,17 @@ const BUTTON_LABEL_FONT_SIZE = 16;
 
 type AppButtonProps = PropsWithChildren<{
   tone?: AppButtonTone;
-  icon?: AppButtonEmoji;
+  icon?: AppButtonIcon;
   maxWidth?: number | string;
+  onPress?: () => void;
 }>;
 
 const AppButtonFrame = styled(TamaguiButton, {
   name: "AppButton",
-  maxWidth: DEFAULT_BUTTON_MAX_WIDTH,
   borderRadius: 16,
-  marginVertical: 16,
-  marginHorizontal: 12,
+  minHeight: 40,
+  paddingHorizontal: 12,
+  paddingVertical: 8,
   justifyContent: "center",
   alignItems: "center",
   pressStyle: {
@@ -54,14 +47,19 @@ export function AppButton({
   tone = "primary",
   icon,
   maxWidth = DEFAULT_BUTTON_MAX_WIDTH,
+  onPress,
 }: AppButtonProps) {
   const theme = useTheme();
   const isDanger = tone === "danger";
-  const Icon = icon ? buttonEmojiIcons[icon] : null;
+  const Icon = icon;
+  const hasTextLabel = typeof children === "string" || typeof children === "number";
+  const hasChildren = children !== null && children !== undefined && typeof children !== "boolean";
+  const contentGap = Icon && hasChildren ? 6 : 0;
 
   return (
     <AppButtonFrame
       maxWidth={maxWidth}
+      onPress={onPress}
       backgroundColor={isDanger ? theme.red10 : theme.panePrimary}
       hoverStyle={{
         backgroundColor: isDanger ? theme.red9 : theme.paneHover,
@@ -71,29 +69,40 @@ export function AppButton({
         scale: 0.98,
       }}
     >
-      <XStack alignItems="center" justifyContent="center" flexWrap="nowrap">
+      <XStack
+        width="100%"
+        alignItems="center"
+        justifyContent="center"
+        flexDirection="row"
+        flexWrap="nowrap"
+        gap={contentGap}
+      >
         {Icon ? (
           <Icon
             color={theme.paneTextPrimary?.val}
             size={BUTTON_ICON_SIZE}
             stroke={1.8}
             style={{
-              marginRight: 6,
-              position: "relative",
-              top: 2,
+              display: "block",
               flexShrink: 0,
             }}
           />
         ) : null}
 
-        <Text
-          color={theme.paneTextPrimary}
-          fontSize={BUTTON_LABEL_FONT_SIZE}
-          lineHeight={BUTTON_LABEL_FONT_SIZE}
-          flexShrink={0}
-        >
-          {children}
-        </Text>
+        {hasTextLabel ? (
+          <Text
+            color={theme.paneTextPrimary}
+            fontSize={BUTTON_LABEL_FONT_SIZE}
+            lineHeight={BUTTON_LABEL_FONT_SIZE}
+            whiteSpace="nowrap"
+            numberOfLines={1}
+            flexShrink={0}
+          >
+            {children}
+          </Text>
+        ) : (
+          children
+        )}
       </XStack>
     </AppButtonFrame>
   );
