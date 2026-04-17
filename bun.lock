@@ -12,6 +12,7 @@
     "apps/web": {
       "name": "@etf-titan/web",
       "dependencies": {
+        "@tabler/icons-react": "^3.41.1",
         "@tamagui/config": "^2.0.0-rc.40",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
@@ -360,6 +361,10 @@
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.60.1", "", { "os": "win32", "cpu": "x64" }, "sha512-lWMnixq/QzxyhTV6NjQJ4SFo1J6PvOX8vUx5Wb4bBPsEb+8xZ89Bz6kOXpfXj9ak9AHTQVQzlgzBEc1SyM27xQ=="],
 
     "@sinclair/typebox": ["@sinclair/typebox@0.27.10", "", {}, "sha512-MTBk/3jGLNB2tVxv6uLlFh1iu64iYOQ2PbdOSK3NW8JZsmlaOh2q6sdtKowBhfw8QFLmYNzTW4/oK4uATIi6ZA=="],
+
+    "@tabler/icons": ["@tabler/icons@3.41.1", "", {}, "sha512-OaRnVbRmH2nHtFeg+RmMJ/7m2oBIF9XCJAUD5gQnMrpK9f05ydj8MZrAf3NZQqOXyxGN1UBL0D5IKLLEUfr74Q=="],
+
+    "@tabler/icons-react": ["@tabler/icons-react@3.41.1", "", { "dependencies": { "@tabler/icons": "3.41.1" }, "peerDependencies": { "react": ">= 16" } }, "sha512-kUgweE+DJtAlMZVIns1FTDdcbpRVnkK7ZpUOXmoxy3JAF0rSHj0TcP4VHF14+gMJGnF+psH2Zt26BLT6owetBA=="],
 
     "@tamagui/accordion": ["@tamagui/accordion@2.0.0-rc.40", "", { "dependencies": { "@tamagui/collapsible": "2.0.0-rc.40", "@tamagui/collection": "2.0.0-rc.40", "@tamagui/compose-refs": "2.0.0-rc.40", "@tamagui/constants": "2.0.0-rc.40", "@tamagui/core": "2.0.0-rc.40", "@tamagui/create-context": "2.0.0-rc.40", "@tamagui/helpers": "2.0.0-rc.40", "@tamagui/polyfill-dev": "2.0.0-rc.40", "@tamagui/stacks": "2.0.0-rc.40", "@tamagui/text": "2.0.0-rc.40", "@tamagui/use-controllable-state": "2.0.0-rc.40", "@tamagui/use-direction": "2.0.0-rc.40" }, "peerDependencies": { "react": ">=19" } }, "sha512-UrI/C2SYUTjXdidTmCqfaP3/VR07Wg5TFgm2qeaka7g82FsELak8gThQYS97ZXcs77qVKQSpbhuoDVzvrZzD+g=="],
 

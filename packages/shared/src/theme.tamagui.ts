@@ -16,19 +16,17 @@ const appFonts = {
   },
 } as const;
 
-const lightThemeTokens = {
-  trueRed: brandColors.trueRed,
-  lochmara: brandColors.lochmara,
-  background: "#FFFFFF",
-  color: "#101828",
-} as const;
-
 /**
  * I stole all these from Wealthsimple.
  */
 const darkThemeTokens = {
-  background: "#2A2C32",
-  textPrimary: "#FFFFFF",
+  background: "rgb(30, 30, 30)",
+  textPrimary: "rgb(95, 95, 95)",
+
+  panePrimary: "rgb(102, 102, 102)",
+  paneHover: "rgb(140, 140, 140)",
+  paneBorderPrimary: "rgb(135, 135, 135)",
+  paneTextPrimary: "rgb(200, 200, 200)",
 } as const;
 
 export const tamaguiConfig: TamaguiInternalConfig = createTamagui({
@@ -38,11 +36,6 @@ export const tamaguiConfig: TamaguiInternalConfig = createTamagui({
     ...defaultConfig.tokens,
   },
   themes: {
-    ...defaultConfig.themes,
-    light: {
-      ...defaultConfig.themes.light,
-      ...lightThemeTokens,
-    },
     dark: {
       ...defaultConfig.themes.dark,
       ...darkThemeTokens,

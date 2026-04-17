@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { Text, YStack } from "tamagui";
-
-const sections = [
-  "ETF upload",
-  "Holdings table",
-  "Reconstructed price chart",
-  "Top holdings bar chart",
-];
+import { MainHeader } from "./components/MainPage/MainHeader";
+import { AppButton } from "./components/Common/AppButton";
 
 export default function App() {
   const [holdings, setHoldings] = useState([]);
@@ -21,12 +16,8 @@ export default function App() {
   }, []);
 
   return (
-    <main className="app-shell">
-      <section className="grid">
-        {holdings.map((holding, idx) => (
-          <Text key={idx}>{JSON.stringify(holding)}</Text>
-        ))}
-      </section>
-    </main>
+    <YStack>
+      <MainHeader />
+    </YStack>
   );
 }
