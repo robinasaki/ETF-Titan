@@ -23,4 +23,3 @@ apps/server/storage/tmp/*.csv
 
 # Log vars
 *.log
-eden/

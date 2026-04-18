@@ -10,8 +10,11 @@ import { useETFHoldings } from "./hooks/getETFHoldings";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
 
+const BRUSH_RESPONSE_DEBOUNCE_MS = 100;
+
 export default function App() {
   const [asOfDate, setAsOfDate] = useState("");
+  const [debouncedAsOfDate, setDebouncedAsOfDate] = useState("");
   const {
     activeEtfId,
     errorMessage,
@@ -25,7 +28,7 @@ export default function App() {
     uploadEtfCsv,
     clearUploadToast,
     setActiveEtfId,
-  } = useETFHoldings(asOfDate);
+  } = useETFHoldings(debouncedAsOfDate);
   const isLoading = isLoadingCatalog || isLoadingHoldings;
   const summaryLabel = latestDate
     ? `${holdings.length} holdings · latest close ${formatDisplayDate(latestDate)}`
@@ -71,7 +74,18 @@ export default function App() {
   }, [selectRelativeEtf]);
 
   useEffect(() => {
+    const debounceTimer = window.setTimeout(() => {
+      setDebouncedAsOfDate(asOfDate);
+    }, BRUSH_RESPONSE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(debounceTimer);
+    };
+  }, [asOfDate]);
+
+  useEffect(() => {
     setAsOfDate("");
+    setDebouncedAsOfDate("");
   }, [activeEtfId]);
 
   useKeyboardShortcutRegistration({
@@ -103,7 +117,7 @@ export default function App() {
           isLoading={isLoading}
         />
         <ETFPriceSeriesPanel etfId={activeEtfId} onAsOfDateChange={setAsOfDate} />
-        <ETFTopHoldingsPanel etfId={activeEtfId} asOfDate={asOfDate} />
+        <ETFTopHoldingsPanel etfId={activeEtfId} asOfDate={debouncedAsOfDate} />
         <ETFTable
           activeEtfId={activeEtfId}
           etfs={etfs}
