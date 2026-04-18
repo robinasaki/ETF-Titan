@@ -2,13 +2,13 @@
 
 ETF Titan is a single-page ETF analytics app built for the take-home exercise.
 
-It lets a user inspect bundled ETF sample data or upload a single ETF weights CSV, then view holdings, reconstructed ETF prices, and top holdings derived from the bundled local constituent price history.
+It lets a user upload ETF weights CSV files, then view holdings, reconstructed ETF prices, and top holdings derived from bundled local constituent price history.
 
 This README contains only the shared-level documentation. More documentations can be found in `apps/server/README.md` and `apps/web/README.md`.
 
 ## Product Scope
 
-- Upload `ETF1.csv` or `ETF2.csv` for analysis while reusing the bundled `prices.csv` (or use the default, pre-loaded ones)
+- Upload any ETF weights CSV for analysis while reusing the bundled `prices.csv`
 - View a holdings table with constituent name, weight, latest close, and latest holding value
 - Reconstruct ETF price history from constituent price history
 - Highlight the top 5 holdings by latest holding value
@@ -55,13 +55,9 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 
 ## Bundled Data
 
-The repo includes sample non-sensitive CSVs under `apps/server/storage/default/`:
+The repo includes only the bundled constituent prices CSV at `apps/server/storage/prices/prices.csv`.
 
-- `ETF1.csv`
-- `ETF2.csv`
-- `prices.csv`
-
-These files allow the app to run immediately after setup. The ETF sample files also act as the canonical shape for uploaded ETF CSV validation, while the bundled `prices.csv` remains the shared historical price source.
+Uploaded ETF weights are stored under `apps/server/storage/uploads/` after backend validation and are renamed to `ETF{n}.csv`.
 
 
 ## Backend Overview
@@ -74,6 +70,7 @@ The backend exposes:
 - `GET /etfs/{etf_id}/price-series`
 - `GET /etfs/{etf_id}/top-holdings`
 - `POST /etfs/upload`
+- `GET /etfs/subscribe`
 
 See `apps/server/README.md` for backend-specific behavior and `apps/server/app/routers/README.md` for route-level notes.
 
