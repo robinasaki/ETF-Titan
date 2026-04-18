@@ -10,7 +10,7 @@ import { useETFHoldings } from "./hooks/getETFHoldings";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
 
-const BRUSH_RESPONSE_DEBOUNCE_MS = 100;
+const BRUSH_RESPONSE_DEBOUNCE_MS = 350;
 
 export default function App() {
   const [asOfDate, setAsOfDate] = useState("");
