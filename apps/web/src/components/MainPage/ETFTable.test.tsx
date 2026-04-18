@@ -6,6 +6,7 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import type { ETFCatalogItem, ETFHolding } from "../../hooks/getETFHoldings";
 
 type ETFTableProps = {
+  asOfDate: string;
   activeEtfId: string;
   etfs: ETFCatalogItem[];
   holdings: ETFHolding[];
@@ -18,6 +19,7 @@ type ETFTableProps = {
 
 function createProps(overrides: Partial<ETFTableProps> = {}): ETFTableProps {
   return {
+    asOfDate: "",
     activeEtfId: "ETF1",
     etfs: [{ id: "ETF1", constituent_count: 3 }],
     holdings: [],

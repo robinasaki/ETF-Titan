@@ -8,14 +8,16 @@ import { ETFTopHoldingsPanel } from "./components/MainPage/ETFTopHoldingsPanel";
 import { Toast } from "./components/Common/Toast";
 import type { AppInputRef } from "./components/Common/AppInput";
 import { useETFHoldings } from "./hooks/getETFHoldings";
+import { useAsOfDate } from "./hooks/useAsOfDate";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
 
 const BRUSH_RESPONSE_DEBOUNCE_MS = 350;
 
 export default function App() {
-  const [asOfDate, setAsOfDate] = useState("");
-  const [debouncedAsOfDate, setDebouncedAsOfDate] = useState("");
+  const { debouncedAsOfDate, setAsOfDate, resetAsOfDate } = useAsOfDate(
+    BRUSH_RESPONSE_DEBOUNCE_MS
+  );
   const {
     activeEtfId,
     errorMessage,
@@ -75,19 +77,8 @@ export default function App() {
   }, [selectRelativeEtf]);
 
   useEffect(() => {
-    const debounceTimer = window.setTimeout(() => {
-      setDebouncedAsOfDate(asOfDate);
-    }, BRUSH_RESPONSE_DEBOUNCE_MS);
-
-    return () => {
-      window.clearTimeout(debounceTimer);
-    };
-  }, [asOfDate]);
-
-  useEffect(() => {
-    setAsOfDate("");
-    setDebouncedAsOfDate("");
-  }, [activeEtfId]);
+    resetAsOfDate();
+  }, [activeEtfId, resetAsOfDate]);
 
   useKeyboardShortcutRegistration({
     focusSearch,
@@ -120,6 +111,7 @@ export default function App() {
         <ETFPriceSeriesPanel etfId={activeEtfId} onAsOfDateChange={setAsOfDate} />
         <ETFTopHoldingsPanel etfId={activeEtfId} asOfDate={debouncedAsOfDate} />
         <ETFTable
+          asOfDate={debouncedAsOfDate}
           activeEtfId={activeEtfId}
           etfs={etfs}
           holdings={holdings}

@@ -10,6 +10,7 @@ import {
 } from "tamagui";
 import type { ETFCatalogItem, ETFHolding } from "../../hooks/getETFHoldings";
 import {
+    formatDisplayDate,
     formatPercentage,
     formatUsdPrice,
     normalizeSymbol,
@@ -50,6 +51,7 @@ type ETFRowProps = {
 };
 
 type ETFTableProps = {
+    asOfDate: string;
     activeEtfId: string;
     etfs: ETFCatalogItem[];
     holdings: ETFHolding[];
@@ -183,6 +185,7 @@ function ETFRow({ etf, isActive, onPress }: ETFRowProps) {
 }
 
 export function ETFTable({
+    asOfDate,
     activeEtfId,
     etfs,
     holdings,
@@ -332,6 +335,14 @@ export function ETFTable({
                                                     <XStack marginTop={6}>
                                                         <Text color={theme.textSecondary} fontSize={14}>
                                                             Upload or select an ETF and filter the visible symbols.
+                                                        </Text>
+                                                    </XStack>
+
+                                                    <XStack marginTop={6}>
+                                                        <Text color={theme.textMuted} fontSize={12}>
+                                                            {asOfDate
+                                                                ? `As of ${formatDisplayDate(asOfDate)}`
+                                                                : "As of latest close"}
                                                         </Text>
                                                     </XStack>
 
