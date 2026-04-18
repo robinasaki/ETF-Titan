@@ -2,6 +2,7 @@ import { describe } from "vitest";
 import { it, expect } from "vitest";
 import {
     formatDisplayDate,
+    formatPercentage,
     formatUsdPrice,
     formatWeight,
     normalizeSymbol,
@@ -33,6 +34,12 @@ describe("formatters", () => {
         expect(formatWeight(0.125678)).toBe("0.126");
         expect(formatWeight(10)).toBe("10.000");
         expect(formatWeight(0)).toBe("0.000");
+    });
+
+    it("formats decimal values as percentages", () => {
+        expect(formatPercentage(0.125678)).toBe("12.568%");
+        expect(formatPercentage(1)).toBe("100.000%");
+        expect(formatPercentage(0)).toBe("0.000%");
     });
 
     /**
