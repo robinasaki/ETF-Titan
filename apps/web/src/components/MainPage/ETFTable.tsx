@@ -15,7 +15,7 @@ import {
     normalizeSymbol,
 } from "../../utils/formatters";
 import { AppButton } from "../Common/AppButton";
-import { AppInput } from "../Common/AppInput";
+import { AppInput, type AppInputRef } from "../Common/AppInput";
 import {
     IconAdjustmentsHorizontal,
     IconArrowLeft,
@@ -58,7 +58,7 @@ type ETFTableProps = {
     refreshHoldings: () => Promise<void>;
     uploadEtfCsv: (file: File) => Promise<void>;
     setActiveEtfId: (etfId: string) => void;
-    searchInputRef?: RefObject<any>;
+    searchInputRef?: RefObject<AppInputRef | null>;
     searchResetVersion?: number;
 };
 

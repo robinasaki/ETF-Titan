@@ -6,6 +6,7 @@ import { ETFTable } from "./components/MainPage/ETFTable";
 import { ETFTableHeader } from "./components/MainPage/ETFTableHeader";
 import { ETFTopHoldingsPanel } from "./components/MainPage/ETFTopHoldingsPanel";
 import { Toast } from "./components/Common/Toast";
+import type { AppInputRef } from "./components/Common/AppInput";
 import { useETFHoldings } from "./hooks/getETFHoldings";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
@@ -33,7 +34,7 @@ export default function App() {
   const summaryLabel = latestDate
     ? `${holdings.length} holdings · latest close ${formatDisplayDate(latestDate)}`
     : `${holdings.length} holdings`;
-  const searchInputRef = useRef<any>(null);
+  const searchInputRef = useRef<AppInputRef>(null);
   const [searchResetVersion, setSearchResetVersion] = useState(0);
 
   const focusSearch = useCallback(() => {

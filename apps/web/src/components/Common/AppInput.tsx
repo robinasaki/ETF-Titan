@@ -1,4 +1,5 @@
 import {
+  type ElementRef,
   type ForwardRefExoticComponent,
   type RefAttributes,
   forwardRef,
@@ -7,12 +8,13 @@ import type { InputProps } from "tamagui";
 import { Input, useTheme } from "tamagui";
 
 type AppInputProps = InputProps;
+export type AppInputRef = ElementRef<typeof Input>;
 
 type AppInputComponent = ForwardRefExoticComponent<
-  AppInputProps & RefAttributes<any>
+  AppInputProps & RefAttributes<AppInputRef>
 >;
 
-export const AppInput: AppInputComponent = forwardRef<any, AppInputProps>(
+export const AppInput: AppInputComponent = forwardRef<AppInputRef, AppInputProps>(
   function AppInput(
     {
       width,
