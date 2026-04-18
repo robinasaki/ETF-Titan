@@ -12,7 +12,7 @@ import { useAsOfDate } from "./hooks/useAsOfDate";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
 
-const BRUSH_RESPONSE_DEBOUNCE_MS = 350;
+const BRUSH_RESPONSE_DEBOUNCE_MS = 200;
 
 export default function App() {
   const { debouncedAsOfDate, setAsOfDate, resetAsOfDate } = useAsOfDate(
