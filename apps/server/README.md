@@ -62,6 +62,7 @@ The upload endpoint also accepts a `limit` query param for top holdings, constra
 - Top holdings are ranked by `weight * latest_close`, with stable tie-breakers applied in code.
 - ETF weight totals are validated with a tolerance because sample inputs may sum to approximately `1.0`, not perfectly.
 - The API is local-development-focused and does not implement authentication.
+- No concurrency controls. Functions such as resolve_uploaded_etf_file_path() might result in race conditions if we introduce concurrencies or a multi-workers env.
 
 ## Validation and Safety Notes
 
