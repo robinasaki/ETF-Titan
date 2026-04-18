@@ -25,6 +25,7 @@ export const AppInput: AppInputComponent = forwardRef<any, AppInputProps>(
   ) {
     const theme = useTheme();
 
+    // In theory we have to apply the foamtter to textTransform to ensure consistency.
     return (
       <Input
         ref={ref}
