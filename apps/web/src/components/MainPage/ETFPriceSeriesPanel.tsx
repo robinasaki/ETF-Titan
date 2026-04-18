@@ -38,6 +38,7 @@ type PriceSeriesGraphProps = {
 };
 
 const CHART_HEIGHT = 260;
+
 /**
  * Helper function for time series hover pane.
  */
@@ -45,6 +46,7 @@ function formatBrushLabel(value: number, data: ChartPoint[]): string {
   const point = data[value];
   return point ? formatDisplayDate(point.date) : "";
 }
+
 
 /**
  * The time series graph without frame.

@@ -1,29 +1,23 @@
-import { useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useState } from "react";
 import {
     Button,
     ScrollView,
     Separator,
-    Spinner,
     Text,
     XStack,
     YStack,
     useTheme,
 } from "tamagui";
-import { useETFHoldings } from "../../hooks/getETFHoldings";
+import type { ETFCatalogItem, ETFHolding } from "../../hooks/getETFHoldings";
 import {
-    formatDisplayDate,
+    formatPercentage,
     formatUsdPrice,
-    formatWeight,
     normalizeSymbol,
 } from "../../utils/formatters";
-import { AppButton } from "../Common/AppButton";
 import { AppInput } from "../Common/AppInput";
-import { ETFPriceSeriesPanel } from "./ETFPriceSeriesPanel";
 import {
     IconAdjustmentsHorizontal,
     IconArrowLeft,
-    IconChevronDown,
-    IconChevronRight,
 } from "@tabler/icons-react";
 
 type SortKey = "name" | "weight" | "latest_close";
@@ -53,6 +47,18 @@ type ETFRowProps = {
     onPress: (etfId: string) => void;
 };
 
+type ETFTableProps = {
+    activeEtfId: string;
+    etfs: ETFCatalogItem[];
+    holdings: ETFHolding[];
+    isLoadingHoldings: boolean;
+    errorMessage: string;
+    refreshHoldings: () => Promise<void>;
+    setActiveEtfId: (etfId: string) => void;
+    searchInputRef?: RefObject<any>;
+    searchResetVersion?: number;
+};
+
 const INITIAL_SORT: SortState = {
     key: "name",
     direction: "asc",
@@ -66,7 +72,6 @@ const CONTROLS_COLUMN_WIDTH = 260;
 const COLLAPSED_CONTROLS_TOGGLE_WIDTH = 52;
 const HOLDINGS_ROWS_MAX_HEIGHT = 720;
 const ETF_SELECTOR_MAX_HEIGHT = 420;
-const TABLE_BODY_EXPANDED_MAX_HEIGHT = 1600;
 const CONTROLS_TOGGLE_TRANSITION = "220ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
@@ -174,24 +179,25 @@ function ETFRow({ etf, isActive, onPress }: ETFRowProps) {
     );
 }
 
-export function ETFTable() {
+export function ETFTable({
+    activeEtfId,
+    etfs,
+    holdings,
+    isLoadingHoldings,
+    errorMessage,
+    refreshHoldings,
+    setActiveEtfId,
+    searchInputRef,
+    searchResetVersion = 0,
+}: ETFTableProps) {
     const theme = useTheme();
-    const {
-        activeEtfId,
-        errorMessage,
-        etfs,
-        holdings,
-        isLoadingCatalog,
-        isLoadingHoldings,
-        latestDate,
-        refreshHoldings,
-        setActiveEtfId,
-    } = useETFHoldings();
     const [searchValue, setSearchValue] = useState("");
     const [activeSort, setActiveSort] = useState<SortState>(INITIAL_SORT);
     const [isControlsExpanded, setIsControlsExpanded] = useState(true);
-    const [isTableExpanded, setIsTableExpanded] = useState(true);
-    const isLoading = isLoadingCatalog || isLoadingHoldings;
+
+    useEffect(() => {
+        setSearchValue("");
+    }, [searchResetVersion]);
 
     const visibleHoldings = useMemo(() => {
         const normalizedSearchValue = normalizeSymbol(searchValue);
@@ -210,11 +216,7 @@ export function ETFTable() {
         );
     }, [activeSort, holdings, searchValue]);
 
-    // Table header
     const holdingsCount = visibleHoldings.length;
-    const summaryLabel = latestDate
-        ? `${holdingsCount} holdings · latest close ${formatDisplayDate(latestDate)}`
-        : `${holdingsCount} holdings`;
 
     // Control pane collapse-expand logics
     const controlsColumnWidth = isControlsExpanded ? CONTROLS_COLUMN_WIDTH : 0;
@@ -240,129 +242,8 @@ export function ETFTable() {
     };
 
     return (
-        <YStack
-            width="100%"
-            maxWidth={1100}
-            marginHorizontal="auto"
-            gap={18}
-            paddingHorizontal={24}
-            paddingVertical={24}
-        >
-            <YStack
-                flex={1}
-                borderWidth={1}
-                borderColor={theme.paneBorderPrimary}
-                borderRadius={20}
-                overflow="hidden"
-                backgroundColor={theme.background}
-            >
-                <XStack
-                    alignItems="center"
-                    justifyContent="flex-start"
-                    flexWrap="nowrap"
-                    paddingHorizontal={18}
-                    paddingVertical={14}
-                    backgroundColor={theme.panePrimary}
-                    overflow="hidden"
-                >
-                    <XStack alignItems="center" gap={12} minWidth={0} flex={1}>
-                        <Text
-                            color={theme.paneTextPrimary}
-                            fontSize={14}
-                            fontWeight="600"
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                            flexShrink={1}
-                        >
-                            {activeEtfId || "Loading ETFs"}
-                        </Text>
-                    </XStack>
-
-                    <XStack
-                        alignItems="center"
-                        gap={10}
-                        minWidth={0}
-                        marginLeft="auto"
-                        flexShrink={0}
-                        flexWrap="nowrap"
-                    >
-                        {isLoading ? (
-                            <Spinner color={theme.paneTextPrimary?.val} size="small" />
-                        ) : null}
-
-                        <AppButton
-                            tone="ghost"
-                            onPress={() => {
-                                setIsTableExpanded((currentValue) => !currentValue);
-                            }}
-                            ariaLabel={isTableExpanded ? "Collapse table" : "Expand table"}
-                            maxWidth={300}
-                        >
-                            <XStack
-                                alignItems="center"
-                                gap={6}
-                                flexWrap="nowrap"
-                                minWidth={0}
-                                overflow="hidden"
-                                justifyContent="center"
-                            >
-                                <Text
-                                    color={theme.paneTextPrimary}
-                                    fontSize={14}
-                                    numberOfLines={1}
-                                    ellipsizeMode="tail"
-                                    minWidth={0}
-                                    flexShrink={1}
-                                    paddingRight={6}
-                                    style={{
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                    }}
-                                >
-                                    {summaryLabel}
-                                </Text>
-
-                                {isTableExpanded ? (
-                                    <IconChevronDown
-                                        color={theme.paneTextPrimary?.val}
-                                        size={16}
-                                        strokeWidth={2}
-                                        style={{
-                                            // flexShrink: 0,
-                                            // display: "block",
-                                            alignSelf: "center",
-                                        }}
-                                    />
-                                ) : (
-                                    <IconChevronRight
-                                        color={theme.paneTextPrimary?.val}
-                                        size={16}
-                                        strokeWidth={2}
-                                        style={{
-                                            // flexShrink: 0,
-                                            // display: "block",
-                                            alignSelf: "center",
-                                        }}
-                                    />
-                                )}
-                            </XStack>
-                        </AppButton>
-                    </XStack>
-                </XStack>
-
-                <YStack
-                    maxHeight={isTableExpanded ? TABLE_BODY_EXPANDED_MAX_HEIGHT : 0}
-                    opacity={isTableExpanded ? 1 : 0}
-                    overflow="hidden"
-                    pointerEvents={isTableExpanded ? "auto" : "none"}
-                    style={{
-                        transition: `max-height ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
-                    }}
-                >
-                    <ETFPriceSeriesPanel etfId={activeEtfId} />
-
-                    {errorMessage ? (
+        <YStack>
+            {errorMessage ? (
                         <YStack gap={14} padding={24}>
                             <Text color={theme.red10} fontSize={16} fontWeight="600">
                                 {errorMessage}
@@ -390,9 +271,9 @@ export function ETFTable() {
                                 </Button>
                             </XStack>
                         </YStack>
-                    ) : (
-                        <ScrollView horizontal contentContainerStyle={{ minWidth: "100%" }}>
-                            <XStack minWidth={combinedTableMinWidth} width="100%" flex={1}>
+            ) : (
+                <ScrollView horizontal contentContainerStyle={{ minWidth: "100%" }}>
+                    <XStack minWidth={combinedTableMinWidth} width="100%" flex={1}>
                                 <YStack
                                     width={controlsColumnWidth}
                                     minWidth={controlsColumnWidth}
@@ -453,6 +334,7 @@ export function ETFTable() {
 
                                             <YStack paddingHorizontal={10}>
                                                 <AppInput
+                                                    ref={searchInputRef}
                                                     value={searchValue}
                                                     onChangeText={setSearchValue}
                                                     placeholder="Search a symbol..."
@@ -588,7 +470,7 @@ export function ETFTable() {
                                                             justifyContent="flex-end"
                                                         >
                                                             <Text color={theme.color} fontSize={15}>
-                                                                {formatWeight(holding.weight)}
+                                                                {formatPercentage(holding.weight)}
                                                             </Text>
                                                         </XStack>
 
@@ -618,8 +500,6 @@ export function ETFTable() {
                             </XStack>
                         </ScrollView>
                     )}
-                </YStack>
-            </YStack>
         </YStack>
     );
 }

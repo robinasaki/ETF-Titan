@@ -7,6 +7,11 @@ const weightFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3,
 });
+const percentageFormatter = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
 
 /**
  * Format a number as a USD price string.
@@ -20,6 +25,13 @@ export function formatUsdPrice(value: number): string {
  */
 export function formatWeight(value: number): string {
   return weightFormatter.format(value);
+}
+
+/**
+ * Format a decimal weight as a percentage string.
+ */
+export function formatPercentage(value: number): string {
+  return percentageFormatter.format(value);
 }
 
 /**
