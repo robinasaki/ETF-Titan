@@ -9,6 +9,7 @@
  * ```
  */
 import {
+  type ComponentProps,
   type ComponentType,
   type PropsWithChildren,
 } from "react";
@@ -18,20 +19,35 @@ import { Button as TamaguiButton, Text, XStack, styled, useTheme } from "tamagui
 type AppButtonTone = "primary" | "danger" | "ghost";
 type AppButtonIcon = ComponentType<IconProps>;
 type AppButtonCursor = "pointer" | "not-allowed";
+type AppButtonStyleProps = Omit<
+  Partial<ComponentProps<typeof TamaguiButton>>,
+  | "children"
+  | "tone"
+  | "icon"
+  | "maxWidth"
+  | "onPress"
+  | "aria-label"
+  | "disabled"
+  | "cursor"
+  | "hoverStyle"
+  | "pressStyle"
+>;
 
 const DEFAULT_BUTTON_MAX_WIDTH = 360;
 const BUTTON_ICON_SIZE = 18;
 const BUTTON_LABEL_FONT_SIZE = 16;
 
-type AppButtonProps = PropsWithChildren<{
-  tone?: AppButtonTone;
-  icon?: AppButtonIcon;
-  maxWidth?: number | string;
-  onPress?: () => void;
-  ariaLabel?: string;
-  disabled?: boolean;
-  cursor?: AppButtonCursor;
-}>;
+type AppButtonProps = PropsWithChildren<
+  {
+    tone?: AppButtonTone;
+    icon?: AppButtonIcon;
+    maxWidth?: number | string;
+    onPress?: () => void;
+    ariaLabel?: string;
+    disabled?: boolean;
+    cursor?: AppButtonCursor;
+  } & AppButtonStyleProps
+>;
 
 const AppButtonFrame = styled(TamaguiButton, {
   name: "AppButton",
@@ -55,6 +71,7 @@ export function AppButton({
   ariaLabel,
   disabled = false,
   cursor,
+  ...styles
 }: AppButtonProps) {
   const theme = useTheme();
   const isDanger = tone === "danger";
@@ -81,6 +98,7 @@ export function AppButton({
       opacity={disabled ? 0.5 : 1}
       cursor={disabled ? "not-allowed" : cursor}
       aria-label={ariaLabel}
+      {...styles}
       hoverStyle={{
         backgroundColor: hoverBackground,
         opacity: disabled ? 0.5 : isGhost ? 0.9 : 1,
