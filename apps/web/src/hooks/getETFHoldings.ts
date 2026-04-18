@@ -53,7 +53,7 @@ async function requestJson<ResponseType>(
 /**
  * Get all default pre-loaded ETFs.
  */
-export function useETFHoldings(): UseETFHoldingsResult {
+export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
   const [etfs, setEtfs] = useState<ETFCatalogItem[]>([]);
   const [activeEtfId, setActiveEtfId] = useState("");
   const [holdings, setHoldings] = useState<ETFHolding[]>([]);
@@ -121,8 +121,16 @@ export function useETFHoldings(): UseETFHoldingsResult {
     setLatestDate("");
 
     try {
+      const holdingsEndpoint = new URL(
+        `/etfs/${activeEtfId}/holdings`,
+        window.location.origin
+      );
+      if (asOfDate) {
+        holdingsEndpoint.searchParams.set("as_of", asOfDate);
+      }
+
       const data = await requestJson<ETFHoldingsResponse>(
-        `/etfs/${activeEtfId}/holdings`
+        `${holdingsEndpoint.pathname}${holdingsEndpoint.search}`
       );
 
       setHoldings(data.items);
@@ -137,7 +145,7 @@ export function useETFHoldings(): UseETFHoldingsResult {
     } finally {
       setIsLoadingHoldings(false);
     }
-  }, [activeEtfId]);
+  }, [activeEtfId, asOfDate]);
 
   useEffect(() => {
     void refreshHoldings();

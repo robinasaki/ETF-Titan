@@ -16,6 +16,7 @@ from app.schemas.etf import (
 )
 from app.services.etf_service import (
     DatasetValidationError,
+    InvalidAsOfDateError,
     UnknownEtfError,
     analyze_uploaded_etf,
     get_holdings_snapshot,
@@ -58,7 +59,10 @@ def list_etfs() -> EtfCatalogResponse:
 
 
 @router.get("/{etf_id}/holdings", response_model=HoldingsResponse)
-def read_etf_holdings(etf_id: str) -> HoldingsResponse:
+def read_etf_holdings(
+    etf_id: str,
+    as_of: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+) -> HoldingsResponse:
     """
     Return the latest holdings snapshot for one built-in ETF.
 
@@ -79,7 +83,7 @@ def read_etf_holdings(etf_id: str) -> HoldingsResponse:
     )
     ```
     """
-    return _handle_service_call(lambda: get_holdings_snapshot(etf_id))
+    return _handle_service_call(lambda: get_holdings_snapshot(etf_id, as_of=as_of))
 
 
 @router.get("/{etf_id}/price-series", response_model=PriceSeriesResponse)
@@ -106,6 +110,7 @@ def read_etf_price_series(etf_id: str) -> PriceSeriesResponse:
 def read_etf_top_holdings(
     etf_id: str,
     limit: int = Query(default=5, ge=1, le=10),
+    as_of: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
 ) -> TopHoldingsResponse:
     """
     Return the highest-value holdings for one built-in ETF.
@@ -128,7 +133,7 @@ def read_etf_top_holdings(
     )
     ```
     """
-    return _handle_service_call(lambda: get_top_holdings(etf_id, limit))
+    return _handle_service_call(lambda: get_top_holdings(etf_id, limit, as_of=as_of))
 
 
 @router.post("/upload", response_model=UploadedEtfAnalyticsResponse)
@@ -182,6 +187,11 @@ def _handle_service_call(operation: Callable[[], ResponseT]) -> ResponseT:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Bundled ETF data failed validation.",
+        ) from exc
+    except InvalidAsOfDateError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
         ) from exc
 
 

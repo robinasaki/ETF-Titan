@@ -101,6 +101,17 @@ class EtfServiceTests(unittest.TestCase):
         self.assertEqual([item.name for item in response.items], ["AAPL", "MSFT"])
         self.assertEqual([item.latest_holding_value for item in response.items], [66.0, 84.0])
 
+    def test_get_holdings_snapshot_passes_as_of_to_named_holdings_builder(self) -> None:
+        """Ensure get_holdings_snapshot() forwards as_of to the shared frame builder."""
+        with patch.object(
+            etf_service,
+            "_build_named_holdings_frame",
+            return_value=("ETF1", "2024-01-02", pd.DataFrame([]), self.prices_frame),
+        ) as build_named_holdings_frame:
+            etf_service.get_holdings_snapshot("ETF1", as_of="2024-01-01")
+
+        build_named_holdings_frame.assert_called_once_with("ETF1", as_of="2024-01-01")
+
     def test_get_reconstructed_price_series_returns_weighted_points(self) -> None:
         """Ensure get_reconstructed_price_series() computes weighted ETF prices per date."""
         holdings_frame = pd.DataFrame(
@@ -168,6 +179,27 @@ class EtfServiceTests(unittest.TestCase):
         self.assertEqual(response.limit, 2)
         self.assertEqual([item.name for item in response.items], ["AAPL", "MSFT"])
 
+    def test_get_top_holdings_passes_as_of_to_named_holdings_builder(self) -> None:
+        """Ensure get_top_holdings() forwards as_of to the shared frame builder."""
+        holdings_frame = pd.DataFrame(
+            [
+                {
+                    "name": "AAPL",
+                    "weight": 0.6,
+                    "latest_close": 110.0,
+                    "latest_holding_value": 66.0,
+                }
+            ]
+        )
+        with patch.object(
+            etf_service,
+            "_build_named_holdings_frame",
+            return_value=("ETF1", "2024-01-02", holdings_frame, self.prices_frame),
+        ) as build_named_holdings_frame:
+            etf_service.get_top_holdings("ETF1", limit=5, as_of="2024-01-01")
+
+        build_named_holdings_frame.assert_called_once_with("ETF1", as_of="2024-01-01")
+
     def test_build_holdings_frame_computes_latest_close_and_holding_value(self) -> None:
         """Ensure _build_holdings_frame() adds latest close and weighted holding value columns."""
         latest_date, holdings_frame, aligned_prices_frame = etf_service._build_holdings_frame(
@@ -179,6 +211,43 @@ class EtfServiceTests(unittest.TestCase):
         self.assertEqual(holdings_frame["latest_close"].tolist(), [110.0, 210.0])
         self.assertEqual(holdings_frame["latest_holding_value"].tolist(), [66.0, 84.0])
         pd.testing.assert_frame_equal(aligned_prices_frame, self.prices_frame)
+
+    def test_build_holdings_frame_uses_as_of_date_when_provided(self) -> None:
+        """Ensure _build_holdings_frame() computes snapshot values from as_of date."""
+        latest_date, holdings_frame, aligned_prices_frame = etf_service._build_holdings_frame(
+            self.weights_frame,
+            self.prices_frame,
+            as_of="2024-01-01",
+        )
+
+        self.assertEqual(latest_date, "2024-01-01")
+        self.assertEqual(holdings_frame["latest_close"].tolist(), [100.0, 200.0])
+        self.assertEqual(holdings_frame["latest_holding_value"].tolist(), [60.0, 80.0])
+        pd.testing.assert_frame_equal(aligned_prices_frame, self.prices_frame)
+
+    def test_build_holdings_frame_rejects_invalid_as_of_date(self) -> None:
+        """Ensure _build_holdings_frame() rejects malformed as_of values."""
+        with self.assertRaisesRegex(
+            etf_service.InvalidAsOfDateError,
+            "YYYY-MM-DD",
+        ):
+            etf_service._build_holdings_frame(
+                self.weights_frame,
+                self.prices_frame,
+                as_of="2024/01/01",
+            )
+
+    def test_build_holdings_frame_rejects_as_of_date_not_in_prices(self) -> None:
+        """Ensure _build_holdings_frame() rejects unavailable as_of dates."""
+        with self.assertRaisesRegex(
+            etf_service.InvalidAsOfDateError,
+            "is unavailable",
+        ):
+            etf_service._build_holdings_frame(
+                self.weights_frame,
+                self.prices_frame,
+                as_of="2024-01-03",
+            )
 
     def test_build_holdings_frame_rejects_missing_price_symbols(self) -> None:
         """Ensure _build_holdings_frame() rejects ETF symbols missing from the prices data."""

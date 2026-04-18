@@ -1,83 +1,76 @@
 import { useMemo } from "react";
 import { Spinner, Text, XStack, YStack, useTheme } from "tamagui";
-import { Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useETFTopHoldings } from "../../hooks/useETFTopHoldings";
 import { formatDisplayDate, formatPercentage, formatUsdPrice } from "../../utils/formatters";
 import { AppButton } from "../Common/AppButton";
 
-type TopHoldingSlice = {
+type TopHoldingBar = {
   name: string;
   weight: number;
-  latestClose: number | null;
-  color: string;
+  latestClose: number;
+  holdingSize: number;
+  fill: string;
 };
 
 type ETFTopHoldingsPanelProps = {
   etfId: string;
+  asOfDate?: string;
 };
 
-const TOP_HOLDINGS_CHART_HEIGHT = 200;
-const TOP_HOLDINGS_ROW_PADDING = 10;
-const TOP_HOLDINGS_ROW_HEIGHT = TOP_HOLDINGS_CHART_HEIGHT + TOP_HOLDINGS_ROW_PADDING * 2;
-const TOP_HOLDINGS_TOTAL_WEIGHT = 1;
-// Random colours.
+const TOP_HOLDINGS_CHART_HEIGHT = 240;
+const TOP_HOLDINGS_MAX_COUNT = 5;
 const TOP_HOLDINGS_COLORS = [
-  "#2D7FF9",
-  "#12B886",
-  "#FCC419",
-  "#F783AC",
-  "#AE3EC9",
-  "#868E96",
+  "#2563EB",
+  "#0F766E",
+  "#D97706",
+  "#DC2626",
+  "#7C3AED",
+  "#475569",
 ] as const;
 
 /**
- * Build exactly six pie slices from top holdings payload.
+ * Build top-five bar rows sorted by holding value.
  */
-function buildTopHoldingSlices(
+function buildTopHoldingBars(
   topHoldings: ReturnType<typeof useETFTopHoldings>["topHoldings"]
-): TopHoldingSlice[] {
-  const topFive = [...topHoldings]
+): TopHoldingBar[] {
+  return [...topHoldings]
+    .map((item, index) => ({
+      name: item.name,
+      weight: item.weight,
+      latestClose: item.latest_close,
+      holdingSize: item.weight * item.latest_close,
+      fill: TOP_HOLDINGS_COLORS[index] ?? TOP_HOLDINGS_COLORS[0],
+    }))
     .sort((left, right) => {
-      if (right.weight !== left.weight) {
-        return right.weight - left.weight;
+      if (right.holdingSize !== left.holdingSize) {
+        return right.holdingSize - left.holdingSize;
       }
 
       return left.name.localeCompare(right.name);
     })
-    .slice(0, 5);
-  const topFiveWeight = topFive.reduce((total, item) => total + item.weight, 0);
-  const otherWeight = Math.max(0, TOP_HOLDINGS_TOTAL_WEIGHT - topFiveWeight);
-
-  return [
-    ...topFive.map((item, index) => ({
-      name: item.name,
-      weight: item.weight,
-      latestClose: item.latest_close,
-      color: TOP_HOLDINGS_COLORS[index] ?? TOP_HOLDINGS_COLORS[0],
-    })),
-    {
-      name: "Other",
-      weight: otherWeight,
-      latestClose: null,
-      color: TOP_HOLDINGS_COLORS[5],
-    },
-  ];
+    .slice(0, TOP_HOLDINGS_MAX_COUNT)
+    .map((item, index) => ({
+      ...item,
+      fill: TOP_HOLDINGS_COLORS[index] ?? TOP_HOLDINGS_COLORS[0],
+    }));
 }
 
 /**
- * Recharts pie tooltip to show weight and latest close.
+ * Recharts bar tooltip to show holding details.
  */
 function TopHoldingsTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: Array<{ payload?: TopHoldingSlice }>;
+  payload?: Array<{ payload?: TopHoldingBar }>;
 }) {
   const theme = useTheme();
-  const slice = payload?.[0]?.payload;
+  const bar = payload?.[0]?.payload;
 
-  if (!active || !slice) {
+  if (!active || !bar) {
     return null;
   }
 
@@ -92,24 +85,28 @@ function TopHoldingsTooltip({
       minWidth={136}
     >
       <Text color={theme.textPrimary} fontSize={13} fontWeight="700">
-        {slice.name}
+        {bar.name}
       </Text>
 
       <Text color={theme.textPrimary} fontSize={12}>
-        Weight: {formatPercentage(slice.weight)}
+        Holding size: {formatUsdPrice(bar.holdingSize)}
       </Text>
 
       <Text color={theme.textPrimary} fontSize={12}>
-        Latest price: {slice.latestClose === null ? "N/A" : formatUsdPrice(slice.latestClose)}
+        Weight: {formatPercentage(bar.weight)}
+      </Text>
+
+      <Text color={theme.textPrimary} fontSize={12}>
+        Latest price: {formatUsdPrice(bar.latestClose)}
       </Text>
     </YStack>
   );
 }
 
 /**
- * Pie chart for top five holdings plus the remaining portfolio.
+ * Bar chart for top holdings sized by latest market value.
  */
-export function ETFTopHoldingsPanel({ etfId }: ETFTopHoldingsPanelProps) {
+export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProps) {
   const theme = useTheme();
   const {
     latestDate,
@@ -117,15 +114,11 @@ export function ETFTopHoldingsPanel({ etfId }: ETFTopHoldingsPanelProps) {
     topHoldings,
     topHoldingsErrorMessage,
     refreshTopHoldings,
-  } = useETFTopHoldings(etfId);
+  } = useETFTopHoldings(etfId, asOfDate);
 
-  const slices = useMemo(() => buildTopHoldingSlices(topHoldings), [topHoldings]);
-  const pieData = useMemo(
-    () => slices.map((slice) => ({ ...slice, fill: slice.color })),
-    [slices]
-  );
-  const hasPositiveSlice = slices.some((slice) => slice.weight > 0);
-  const hasData = topHoldings.length > 0 && hasPositiveSlice;
+  const bars = useMemo(() => buildTopHoldingBars(topHoldings), [topHoldings]);
+  const hasPositiveBar = bars.some((bar) => bar.holdingSize > 0);
+  const hasData = topHoldings.length > 0 && hasPositiveBar;
 
   return (
     <YStack
@@ -138,11 +131,17 @@ export function ETFTopHoldingsPanel({ etfId }: ETFTopHoldingsPanelProps) {
     >
       <XStack alignItems="center" justifyContent="space-between" gap={8}>
         <Text color={theme.textPrimary} fontSize={16} fontWeight="700">
-          Top Holdings Distribution
+          Top 5 Holdings by Size
         </Text>
 
         {isLoadingTopHoldings ? <Spinner size="small" color={theme.textPrimary?.val} /> : null}
       </XStack>
+
+      {latestDate ? (
+        <Text color={theme.textSecondary} fontSize={13}>
+          As of latest close {formatDisplayDate(latestDate)}
+        </Text>
+      ) : null}
 
       {topHoldingsErrorMessage ? (
         <YStack gap={8}>
@@ -179,64 +178,45 @@ export function ETFTopHoldingsPanel({ etfId }: ETFTopHoldingsPanelProps) {
       ) : null}
 
       {!topHoldingsErrorMessage && hasData ? (
-        <YStack
-          height={TOP_HOLDINGS_ROW_HEIGHT}
-          position="relative"
-        >
-          <XStack
-            position="absolute"
-            top={TOP_HOLDINGS_ROW_PADDING}
-            right={TOP_HOLDINGS_ROW_PADDING}
-            bottom={TOP_HOLDINGS_ROW_PADDING}
-            left={TOP_HOLDINGS_ROW_PADDING}
-            alignItems="center"
-            justifyContent="space-between"
-            gap={20}
-          >
-            <YStack height="100%" flex={1} minWidth={260}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="weight"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="78%"
-                    isAnimationActive={false}
-                  />
+        <YStack height={TOP_HOLDINGS_CHART_HEIGHT}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={bars} margin={{ top: 4, right: 8, left: 8, bottom: 12 }}>
+              <CartesianGrid vertical={false} stroke={theme.paneBorderPrimary?.val} />
 
-                  <Tooltip
-                    isAnimationActive={false}
-                    content={<TopHoldingsTooltip />}
-                    wrapperStyle={{ outline: "none" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </YStack>
+              <XAxis
+                type="category"
+                dataKey="name"
+                tick={{ fill: theme.textSecondary?.val, fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
 
-            {/* Legends */}
-            <YStack width={140} gap={8} alignItems="flex-start" justifyContent="center">
-              {slices.map((slice) => (
-                <XStack
-                  key={slice.name}
-                  flexDirection="row"
-                  alignItems="center"
-                  justifyContent="flex-start"
-                  flexWrap="nowrap"
-                  width="100%"
-                  paddingVertical={2}
-                >
-                  <Text color={theme.textSecondary} fontSize={12} whiteSpace="nowrap" flexShrink={0}>
-                    <Text color={slice.color} fontSize={20} paddingRight={4}>
-                      ●
-                    </Text>
-                    {slice.name}: {formatPercentage(slice.weight)}
-                  </Text>
-                </XStack>
-              ))}
-            </YStack>
-          </XStack>
+              <YAxis
+                type="number"
+                tick={{ fill: theme.textSecondary?.val, fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) =>
+                  typeof value === "number"
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                        notation: "compact",
+                        maximumFractionDigits: 1,
+                      }).format(value)
+                    : ""
+                }
+              />
+
+              <Tooltip
+                isAnimationActive={false}
+                content={<TopHoldingsTooltip />}
+                wrapperStyle={{ outline: "none" }}
+              />
+
+              <Bar dataKey="holdingSize" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
         </YStack>
       ) : null}
     </YStack>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Spinner, Text, XStack, YStack, useTheme } from "tamagui";
 import {
   Brush,
@@ -16,6 +16,7 @@ import { AppButton } from "../Common/AppButton";
 
 type ETFPriceSeriesPanelProps = {
   etfId: string;
+  onAsOfDateChange?: (date: string) => void;
 };
 
 type ChartPoint = {
@@ -159,7 +160,10 @@ function PriceSeriesGraph({
 /**
  * Given an ETF id, construct the entire interactive time series graph with frame.
  */
-export function ETFPriceSeriesPanel({ etfId }: ETFPriceSeriesPanelProps) {
+export function ETFPriceSeriesPanel({
+  etfId,
+  onAsOfDateChange,
+}: ETFPriceSeriesPanelProps) {
   const theme = useTheme();
   const {
     latestDate,
@@ -186,6 +190,7 @@ export function ETFPriceSeriesPanel({ etfId }: ETFPriceSeriesPanelProps) {
     startIndex: 0,
     endIndex: 0,
   });
+  const [asOfIndex, setAsOfIndex] = useState(0);
 
   // Don't show brush if days <= 14.
   const shouldShowBrush = data.length > 14;
@@ -205,7 +210,32 @@ export function ETFPriceSeriesPanel({ etfId }: ETFPriceSeriesPanelProps) {
 
   useEffect(() => {
     setBrushRange(fullRange);
+    setAsOfIndex(fullRange.endIndex);
   }, [fullRange]);
+
+  const handleBrushRangeChange = useCallback((nextRange: BrushRange) => {
+    setBrushRange((previousRange) => {
+      const movedStartOnly =
+        nextRange.startIndex !== previousRange.startIndex &&
+        nextRange.endIndex === previousRange.endIndex;
+      setAsOfIndex(movedStartOnly ? nextRange.startIndex : nextRange.endIndex);
+      return nextRange;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (data.length === 0) {
+      onAsOfDateChange?.("");
+      return;
+    }
+
+    const boundedEndIndex = Math.min(
+      Math.max(asOfIndex, 0),
+      data.length - 1
+    );
+    const selectedPoint = data[boundedEndIndex];
+    onAsOfDateChange?.(selectedPoint?.date ?? "");
+  }, [asOfIndex, data, onAsOfDateChange]);
 
   return (
     <YStack
@@ -234,6 +264,7 @@ export function ETFPriceSeriesPanel({ etfId }: ETFPriceSeriesPanelProps) {
           tone="primary"
           onPress={() => {
             setBrushRange(fullRange);
+            setAsOfIndex(fullRange.endIndex);
           }}
           disabled={isResetZoomDisabled}
           position="absolute"
@@ -271,7 +302,7 @@ export function ETFPriceSeriesPanel({ etfId }: ETFPriceSeriesPanelProps) {
         data={data}
         shouldShowBrush={shouldShowBrush}
         brushRange={brushRange}
-        onBrushRangeChange={setBrushRange}
+        onBrushRangeChange={handleBrushRangeChange}
         isLoadingPriceSeries={isLoadingPriceSeries}
       />
     </YStack>

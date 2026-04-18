@@ -92,6 +92,21 @@ class EtfUploadRouteTests(unittest.TestCase):
             "Bundled ETF data failed validation.",
         )
 
+    def test_handle_service_call_maps_invalid_as_of_to_422(self) -> None:
+        """Ensure _handle_service_call() converts InvalidAsOfDateError into HTTP 422."""
+        with self.assertRaises(HTTPException) as captured:
+            etfs._handle_service_call(
+                lambda: (_ for _ in ()).throw(
+                    etfs.InvalidAsOfDateError("as_of date '2024-01-03' is unavailable.")
+                )
+            )
+
+        self.assertEqual(captured.exception.status_code, 422)
+        self.assertEqual(
+            captured.exception.detail,
+            "as_of date '2024-01-03' is unavailable.",
+        )
+
     def test_handle_upload_call_maps_dataset_validation_to_422(self) -> None:
         """Ensure _handle_upload_call() converts upload validation errors into HTTP 422."""
         with self.assertRaises(HTTPException) as captured:

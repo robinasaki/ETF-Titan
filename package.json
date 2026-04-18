@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "setup": "bash scripts/setup.sh",
+    "kill": "bash scripts/kill.sh",
     "dev": "bash scripts/dev.sh",
     "dev:LAN": "bash scripts/dev.sh lan",
     "dev:api": "if [ -x apps/server/.venv/bin/python ]; then apps/server/.venv/bin/python -m uvicorn app.main:app --app-dir apps/server --reload --host 127.0.0.1 --port 8000; else python3 -m uvicorn app.main:app --app-dir apps/server --reload --host 127.0.0.1 --port 8000; fi",

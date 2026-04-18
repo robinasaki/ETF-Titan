@@ -6,6 +6,7 @@ SERVER_DIR="$ROOT_DIR/apps/server"
 WEB_DIR="$ROOT_DIR/apps/web"
 EXPOSE_MODE="${1:-local}"
 API_PORT="${API_PORT:-8000}"
+REUSE_API_SERVER="${REUSE_API_SERVER:-0}"
 
 cd "$ROOT_DIR"
 
@@ -27,7 +28,7 @@ fi
 
 api_health_url="http://127.0.0.1:$API_PORT/health"
 
-if "$PYTHON_BIN" - "$api_health_url" <<'PY'
+if [ "$REUSE_API_SERVER" = "1" ] && "$PYTHON_BIN" - "$api_health_url" <<'PY'
 import sys
 import urllib.request
 

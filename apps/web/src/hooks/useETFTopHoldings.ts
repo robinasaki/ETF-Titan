@@ -25,7 +25,10 @@ type UseETFTopHoldingsResult = {
 /**
  * Load the highest-value ETF holdings for one selected ETF.
  */
-export function useETFTopHoldings(etfId: string): UseETFTopHoldingsResult {
+export function useETFTopHoldings(
+  etfId: string,
+  asOfDate?: string
+): UseETFTopHoldingsResult {
   const [latestDate, setLatestDate] = useState("");
   const [isLoadingTopHoldings, setIsLoadingTopHoldings] = useState(false);
   const [topHoldings, setTopHoldings] = useState<ETFTopHolding[]>([]);
@@ -46,7 +49,13 @@ export function useETFTopHoldings(etfId: string): UseETFTopHoldingsResult {
     setTopHoldingsErrorMessage("");
 
     try {
-      const response = await fetch(`/etfs/${etfId}/top-holdings?limit=5`, { signal });
+      const endpoint = new URL(`/etfs/${etfId}/top-holdings`, window.location.origin);
+      endpoint.searchParams.set("limit", "5");
+      if (asOfDate) {
+        endpoint.searchParams.set("as_of", asOfDate);
+      }
+
+      const response = await fetch(`${endpoint.pathname}${endpoint.search}`, { signal });
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}.`);
       }
@@ -71,7 +80,7 @@ export function useETFTopHoldings(etfId: string): UseETFTopHoldingsResult {
         setIsLoadingTopHoldings(false);
       }
     }
-  }, [etfId]);
+  }, [asOfDate, etfId]);
 
   useEffect(() => {
     const abortController = new AbortController();

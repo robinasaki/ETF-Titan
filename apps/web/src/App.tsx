@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { YStack } from "tamagui";
 import { ETFPriceSeriesPanel } from "./components/MainPage/ETFPriceSeriesPanel";
 import { MainHeader } from "./components/MainPage/MainHeader";
@@ -10,6 +10,7 @@ import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLay
 import { formatDisplayDate } from "./utils/formatters";
 
 export default function App() {
+  const [asOfDate, setAsOfDate] = useState("");
   const {
     activeEtfId,
     errorMessage,
@@ -20,7 +21,7 @@ export default function App() {
     latestDate,
     refreshHoldings,
     setActiveEtfId,
-  } = useETFHoldings();
+  } = useETFHoldings(asOfDate);
   const isLoading = isLoadingCatalog || isLoadingHoldings;
   const summaryLabel = latestDate
     ? `${holdings.length} holdings · latest close ${formatDisplayDate(latestDate)}`
@@ -65,6 +66,10 @@ export default function App() {
     selectRelativeEtf(1);
   }, [selectRelativeEtf]);
 
+  useEffect(() => {
+    setAsOfDate("");
+  }, [activeEtfId]);
+
   useKeyboardShortcutRegistration({
     focusSearch,
     blurSearch,
@@ -92,8 +97,8 @@ export default function App() {
           summaryLabel={summaryLabel}
           isLoading={isLoading}
         />
-        <ETFPriceSeriesPanel etfId={activeEtfId} />
-        <ETFTopHoldingsPanel etfId={activeEtfId} />
+        <ETFPriceSeriesPanel etfId={activeEtfId} onAsOfDateChange={setAsOfDate} />
+        <ETFTopHoldingsPanel etfId={activeEtfId} asOfDate={asOfDate} />
         <ETFTable
           activeEtfId={activeEtfId}
           etfs={etfs}

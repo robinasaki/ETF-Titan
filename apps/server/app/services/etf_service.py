@@ -29,6 +29,10 @@ from app.schemas.etf import (
 WEIGHT_SUM_TOLERANCE = 0.01
 
 
+class InvalidAsOfDateError(ValueError):
+    """Raised when an as-of date is invalid or unavailable."""
+
+
 def list_supported_etfs() -> EtfCatalogResponse:
     """
     Return the built-in ETF ids and each ETF's constituent count.
@@ -40,7 +44,7 @@ def list_supported_etfs() -> EtfCatalogResponse:
     return EtfCatalogResponse(items=items)
 
 
-def get_holdings_snapshot(etf_id: str) -> HoldingsResponse:
+def get_holdings_snapshot(etf_id: str, as_of: str | None = None) -> HoldingsResponse:
     """
     Return the latest holdings snapshot for one built-in ETF.
 
@@ -49,7 +53,8 @@ def get_holdings_snapshot(etf_id: str) -> HoldingsResponse:
     holding value.
     """
     normalized_etf_id, latest_date, holdings_frame, _ = _build_named_holdings_frame(
-        etf_id
+        etf_id,
+        as_of=as_of,
     )
     items = [
         HoldingSnapshotItem(
@@ -90,7 +95,11 @@ def get_reconstructed_price_series(etf_id: str) -> PriceSeriesResponse:
     )
 
 
-def get_top_holdings(etf_id: str, limit: int = 5) -> TopHoldingsResponse:
+def get_top_holdings(
+    etf_id: str,
+    limit: int = 5,
+    as_of: str | None = None,
+) -> TopHoldingsResponse:
     """
     Return the highest-value holdings for one built-in ETF.
 
@@ -98,7 +107,8 @@ def get_top_holdings(etf_id: str, limit: int = 5) -> TopHoldingsResponse:
     stable tie-breakers.
     """
     normalized_etf_id, latest_date, holdings_frame, _ = _build_named_holdings_frame(
-        etf_id
+        etf_id,
+        as_of=as_of,
     )
 
     # Sort top `limit`
@@ -130,6 +140,7 @@ def get_top_holdings(etf_id: str, limit: int = 5) -> TopHoldingsResponse:
 
 def _build_named_holdings_frame(
     etf_id: str,
+    as_of: str | None = None,
 ) -> tuple[str, str, pd.DataFrame, pd.DataFrame]:
     """
     Build validated holdings data for one built-in ETF.
@@ -144,7 +155,9 @@ def _build_named_holdings_frame(
     )  # Loads the default ETF.csv
     prices_frame = load_prices_frame()  # Loads the default prices.csv
     latest_date, holdings_frame, aligned_prices_frame = _build_holdings_frame(
-        weights_frame, prices_frame
+        weights_frame,
+        prices_frame,
+        as_of=as_of,
     )
     return normalized_etf_id, latest_date, holdings_frame, aligned_prices_frame
 
@@ -196,7 +209,9 @@ def analyze_uploaded_etf(
 
 
 def _build_holdings_frame(
-    weights_frame: pd.DataFrame, prices_frame: pd.DataFrame
+    weights_frame: pd.DataFrame,
+    prices_frame: pd.DataFrame,
+    as_of: str | None = None,
 ) -> tuple[str, pd.DataFrame, pd.DataFrame]:
     """
     Align ETF weights with price history and compute derived holdings values.
@@ -218,9 +233,8 @@ def _build_holdings_frame(
     if abs(total_weight - 1.0) > WEIGHT_SUM_TOLERANCE:
         raise DatasetValidationError("ETF weights must sum to approximately 1.0.")
 
-    # Get latest stats on the symbol
-    latest_row = prices_frame.iloc[-1]
-    latest_date = latest_row["DATE"].date().isoformat()
+    # Resolve the snapshot row for latest or selected as-of date.
+    latest_row, latest_date = _resolve_snapshot_row(prices_frame, as_of)
     latest_prices = latest_row.drop(labels=["DATE"]).to_dict()
 
     # Compute the latest close price
@@ -236,6 +250,43 @@ def _build_holdings_frame(
     )
 
     return latest_date, holdings_frame, prices_frame
+
+
+def _resolve_snapshot_row(
+    prices_frame: pd.DataFrame,
+    as_of: str | None,
+) -> tuple[pd.Series, str]:
+    """Select one snapshot row from prices by as-of date."""
+    if as_of is None:
+        latest_row = prices_frame.iloc[-1]
+        return latest_row, latest_row["DATE"].date().isoformat()
+
+    normalized_as_of = _normalize_as_of_date(as_of)
+    matching_rows = prices_frame.loc[
+        prices_frame["DATE"].dt.date == normalized_as_of.date()
+    ]
+    if matching_rows.empty:
+        raise InvalidAsOfDateError(
+            f"as_of date '{normalized_as_of.date().isoformat()}' is unavailable."
+        )
+    selected_row = matching_rows.iloc[-1]
+    return selected_row, selected_row["DATE"].date().isoformat()
+
+
+def _normalize_as_of_date(as_of: str) -> pd.Timestamp:
+    """Parse and normalize as-of date input."""
+    normalized_as_of = as_of.strip()
+    if not normalized_as_of:
+        raise InvalidAsOfDateError("as_of date must be a non-empty YYYY-MM-DD string.")
+
+    try:
+        parsed_as_of = pd.to_datetime(normalized_as_of, format="%Y-%m-%d", errors="raise")
+    except (ValueError, TypeError) as exc:
+        raise InvalidAsOfDateError(
+            "as_of date must use YYYY-MM-DD format."
+        ) from exc
+
+    return parsed_as_of
 
 
 def _serialize_holding_items(holdings_frame: pd.DataFrame) -> list[HoldingSnapshotItem]:
@@ -319,6 +370,7 @@ def _round_number(value: float, digits: int = 6) -> float:
 
 __all__ = [
     "DatasetValidationError",
+    "InvalidAsOfDateError",
     "UnknownEtfError",
     "analyze_uploaded_etf",
     "get_holdings_snapshot",
