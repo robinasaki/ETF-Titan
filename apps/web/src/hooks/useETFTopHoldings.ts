@@ -43,9 +43,7 @@ export function useETFTopHoldings(
       return;
     }
 
-    setLatestDate("");
     setIsLoadingTopHoldings(true);
-    setTopHoldings([]);
     setTopHoldingsErrorMessage("");
 
     try {

@@ -117,8 +117,6 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
 
     setIsLoadingHoldings(true);
     setErrorMessage("");
-    setHoldings([]);
-    setLatestDate("");
 
     try {
       const holdingsEndpoint = new URL(
