@@ -13,3 +13,5 @@
 - Use only Tamagui components. Register UI definitions through only the Tamagui props, unless injecting to React styles is absolutely necessary. Use only Tamagui animation props tokens since we're centralizing the UI and colour.
 - For dynamic text strings, construct the string outside the component.
 - Although for this project, the frontend and the backend are probably connected through localhost (or LAN), I implemented the loading stage for frontend anyway since it is a good practice.
+- We assume the web is used normally. This project is not yet optimized for small web and mobile web display.
+- Frontend formatting functions, such as price formatters are defined in `utils/` to ensure display consistency. This is the single source-of-truth for price rounding.

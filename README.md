@@ -50,6 +50,8 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 - The pre-loaded datasets are not sensitive. (I pushed them to repo for less setup, in a real project, I'd be careful with what data to push to repo.)
 - Uploaded ETF data follows the same CSV shape as the bundled ETF fixtures.
 - The app is intentionally scoped to a local take-home environment, so auth and external data integrations are out of scope.
+- No packging work or containerization work is required for the scope.
+- All currencies are default to USD and no monetary conversion.
 
 ## Bundled Data
 

@@ -13,6 +13,12 @@ vi.mock("../../hooks/getETFHoldings", () => {
   };
 });
 
+vi.mock("./ETFPriceSeriesPanel", () => {
+  return {
+    ETFPriceSeriesPanel: ({ etfId }: { etfId: string }) => <div>Chart for {etfId}</div>,
+  };
+});
+
 type HookState = {
   activeEtfId: string;
   errorMessage: string;

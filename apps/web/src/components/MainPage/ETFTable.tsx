@@ -10,8 +10,15 @@ import {
     useTheme,
 } from "tamagui";
 import { useETFHoldings } from "../../hooks/getETFHoldings";
+import {
+    formatDisplayDate,
+    formatUsdPrice,
+    formatWeight,
+    normalizeSymbol,
+} from "../../utils/formatters";
 import { AppButton } from "../Common/AppButton";
 import { AppInput } from "../Common/AppInput";
+import { ETFPriceSeriesPanel } from "./ETFPriceSeriesPanel";
 import {
     IconAdjustmentsHorizontal,
     IconArrowLeft,
@@ -59,23 +66,8 @@ const CONTROLS_COLUMN_WIDTH = 260;
 const COLLAPSED_CONTROLS_TOGGLE_WIDTH = 52;
 const HOLDINGS_ROWS_MAX_HEIGHT = 720;
 const ETF_SELECTOR_MAX_HEIGHT = 420;
-const TABLE_BODY_EXPANDED_MAX_HEIGHT = 1200;
+const TABLE_BODY_EXPANDED_MAX_HEIGHT = 1600;
 const CONTROLS_TOGGLE_TRANSITION = "220ms cubic-bezier(0.22, 1, 0.36, 1)";
-
-/**
- * Format helper for the weight column.
- */
-const weightFormatter = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 3,
-});
-
-/**
- * Format helper for the latest closing price.
- */
-const latestCloseFormatter = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 3,
-});
 
 /**
  * Sorter helper for the table columns.
@@ -92,14 +84,6 @@ function compareValues(
     }
 
     return (Number(left) - Number(right)) * multiplier;
-}
-
-function formatWeight(weight: number) {
-    return weightFormatter.format(weight);
-}
-
-function formatLatestClose(value: number) {
-    return latestCloseFormatter.format(value);
 }
 
 function getSortIndicator(sortKey: SortKey, activeSort: SortState) {
@@ -210,10 +194,10 @@ export function ETFTable() {
     const isLoading = isLoadingCatalog || isLoadingHoldings;
 
     const visibleHoldings = useMemo(() => {
-        const normalizedSearchValue = searchValue.trim().toLowerCase();
+        const normalizedSearchValue = normalizeSymbol(searchValue);
         const filteredHoldings = normalizedSearchValue
             ? holdings.filter((holding) =>
-                holding.name.toLowerCase().includes(normalizedSearchValue)
+                normalizeSymbol(holding.name).includes(normalizedSearchValue)
             )
             : holdings;
 
@@ -229,7 +213,7 @@ export function ETFTable() {
     // Table header
     const holdingsCount = visibleHoldings.length;
     const summaryLabel = latestDate
-        ? `${holdingsCount} holdings · latest close ${latestDate}`
+        ? `${holdingsCount} holdings · latest close ${formatDisplayDate(latestDate)}`
         : `${holdingsCount} holdings`;
 
     // Control pane collapse-expand logics
@@ -345,7 +329,9 @@ export function ETFTable() {
                                         size={16}
                                         strokeWidth={2}
                                         style={{
-                                            flexShrink: 0,
+                                            // flexShrink: 0,
+                                            // display: "block",
+                                            alignSelf: "center",
                                         }}
                                     />
                                 ) : (
@@ -354,7 +340,9 @@ export function ETFTable() {
                                         size={16}
                                         strokeWidth={2}
                                         style={{
-                                            flexShrink: 0,
+                                            // flexShrink: 0,
+                                            // display: "block",
+                                            alignSelf: "center",
                                         }}
                                     />
                                 )}
@@ -372,6 +360,8 @@ export function ETFTable() {
                         transition: `max-height ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
                     }}
                 >
+                    <ETFPriceSeriesPanel etfId={activeEtfId} />
+
                     {errorMessage ? (
                         <YStack gap={14} padding={24}>
                             <Text color={theme.red10} fontSize={16} fontWeight="600">
@@ -409,6 +399,8 @@ export function ETFTable() {
                                     opacity={controlsPaneOpacity}
                                     overflow="hidden"
                                     pointerEvents={isControlsExpanded ? "auto" : "none"}
+                                    borderRightWidth={1}
+                                    borderRightColor={theme.paneBorderPrimary}
                                     style={{
                                         transition: `width ${CONTROLS_TOGGLE_TRANSITION}, opacity ${CONTROLS_TOGGLE_TRANSITION}`,
                                     }}
@@ -416,8 +408,6 @@ export function ETFTable() {
                                     <YStack
                                         width={CONTROLS_COLUMN_WIDTH}
                                         minWidth={CONTROLS_COLUMN_WIDTH}
-                                        borderRightWidth={1}
-                                        borderRightColor={theme.paneBorderPrimary}
                                     >
                                         <XStack>
                                             <Button
@@ -444,7 +434,7 @@ export function ETFTable() {
                                             </Button>
                                         </XStack>
 
-                                        <YStack>
+                                        <YStack borderRightWidth={1} borderColor={theme.borderColor}>
                                             <YStack padding={16}>
                                                 <YStack>
                                                     <XStack marginTop={6}>
@@ -612,7 +602,7 @@ export function ETFTable() {
                                                                 fontSize={15}
                                                                 fontWeight="500"
                                                             >
-                                                                ${formatLatestClose(holding.latest_close)}
+                                                                {formatUsdPrice(holding.latest_close)}
                                                             </Text>
                                                         </XStack>
                                                     </XStack>

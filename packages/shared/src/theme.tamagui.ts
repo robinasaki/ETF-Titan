@@ -32,6 +32,9 @@ const darkThemeTokens = {
   paneHover: "rgb(140, 140, 140)",
   paneBorderPrimary: "rgb(135, 135, 135)",
   paneTextPrimary: "rgb(200, 200, 200)",
+
+  brushInBound: "rgb(300, 300, 300)",
+  brushOutBound: "rgb(50, 50, 50)",
 } as const;
 
 export const tamaguiConfig: TamaguiInternalConfig = createTamagui({

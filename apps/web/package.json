@@ -12,6 +12,7 @@
     "@tamagui/config": "^2.0.0-rc.40",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.8.1",
     "tamagui": "^2.0.0-rc.40"
   },
   "devDependencies": {
