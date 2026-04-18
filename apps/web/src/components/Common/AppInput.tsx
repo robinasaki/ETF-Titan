@@ -32,6 +32,7 @@ export const AppInput: AppInputComponent = forwardRef<any, AppInputProps>(
         backgroundColor={backgroundColor ?? "transparent"}
         borderColor={borderColor ?? theme.paneBorderPrimary}
         color={color ?? theme.paneTextPrimary}
+        textTransform="uppercase"
         {...rest}
       />
     );
