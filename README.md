@@ -4,6 +4,8 @@ ETF Titan is a single-page ETF analytics app built for the take-home exercise.
 
 It lets a user inspect bundled ETF sample data or upload a single ETF weights CSV, then view holdings, reconstructed ETF prices, and top holdings derived from the bundled local constituent price history.
 
+This README contains only the shared-level documentation. More documentations can be found in `apps/server/README.md` and `apps/web/README.md`.
+
 ## Product Scope
 
 - Upload `ETF1.csv` or `ETF2.csv` for analysis while reusing the bundled `prices.csv` (or use the default, pre-loaded ones)
@@ -16,7 +18,7 @@ It lets a user inspect bundled ETF sample data or upload a single ETF weights CS
 
 - Frontend: React, Vite, Tamagui
 - Backend: FastAPI, Pandas
-- Tooling: Bun, TypeScript, Python `unittest`
+- Tooling: Bun, TypeScript, Python unittest, TypeScript Vitest
 
 *Why the stack?*
 
@@ -43,15 +45,13 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 
 ## Assumptions
 
-- ETF weights are treated as static over time.
-- ETF reconstruction is the weighted sum of constituent prices for each date.
-- The latest ETF snapshot is derived from the last available row in `prices.csv`.
-- `prices.csv` is the single source of truth for symbol prices.
-- The pre-loaded datasets are not sensitive. (I pushed them to repo for less setup, in a real project, I'd be careful with what data to push to repo.)
-- Uploaded ETF data follows the same CSV shape as the bundled ETF fixtures.
-- The app is intentionally scoped to a local take-home environment, so auth and external data integrations are out of scope.
-- No packging work or containerization work is required for the scope.
-- All currencies are default to USD and no monetary conversion.
+- The project is intentionally scoped to a local take-home environment, so auth and external market data integrations are out of scope.
+- Bundled sample datasets are treated as non-sensitive local fixtures for development.
+- No packaging or containerization work is required for the current scope.
+- Currency handling is fixed to USD with no conversion layer.
+- Implementation-specific assumptions are intentionally split by app:
+  - backend assumptions: `apps/server/README.md`
+  - frontend assumptions: `apps/web/README.md`
 
 ## Bundled Data
 
