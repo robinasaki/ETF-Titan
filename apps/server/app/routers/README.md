@@ -25,6 +25,7 @@ The ETF router is mounted at the `/etfs` prefix and currently serves:
 - `GET /etfs/{etf_id}/price-series`
 - `GET /etfs/{etf_id}/top-holdings`
 - `POST /etfs/upload`
+- `GET /etfs/subscribe`
 
 The upload route is the only async route in this package because it streams an uploaded ETF CSV to disk before calling the service layer.
 
@@ -32,6 +33,6 @@ The upload route is the only async route in this package because it streams an u
 
 - Routers should stay thin and task-focused.
 - HTTP validation belongs here; ETF calculations belong in `app/services/etf_service.py`.
-- Upload handling assumes a single ETF weights CSV named `ETF1.csv` or `ETF2.csv`.
+- Upload handling accepts any single ETF weights CSV filename and persists it as `ETF{n}.csv` after validation.
 - Router error handling should expose user-meaningful validation messages without leaking internal paths or low-level exceptions.
 - This package is expected to remain small unless more API surfaces are added.

@@ -89,7 +89,7 @@ class EtfUploadRouteTests(unittest.TestCase):
         self.assertEqual(captured.exception.status_code, 500)
         self.assertEqual(
             captured.exception.detail,
-            "Bundled ETF data failed validation.",
+            "ETF dataset failed validation.",
         )
 
     def test_handle_service_call_maps_invalid_as_of_to_422(self) -> None:
@@ -126,7 +126,6 @@ class EtfUploadRouteTests(unittest.TestCase):
                 etfs._stage_csv_upload(
                     upload=self._upload_file("ETF1.txt", "name,weight\nAAPL,1.0\n"),
                     label="ETF weights",
-                    allowed_filenames=frozenset({"ETF1.csv"}),
                 )
             )
 
@@ -134,23 +133,6 @@ class EtfUploadRouteTests(unittest.TestCase):
         self.assertEqual(
             captured.exception.detail,
             "ETF weights upload must be a .csv file.",
-        )
-
-    def test_stage_csv_upload_rejects_invalid_filename(self) -> None:
-        """Ensure _stage_csv_upload() rejects disallowed filenames."""
-        with self.assertRaises(HTTPException) as captured:
-            asyncio.run(
-                etfs._stage_csv_upload(
-                    upload=self._upload_file("custom.csv", "name,weight\nAAPL,1.0\n"),
-                    label="ETF weights",
-                    allowed_filenames=frozenset({"ETF1.csv"}),
-                )
-            )
-
-        self.assertEqual(captured.exception.status_code, 422)
-        self.assertEqual(
-            captured.exception.detail,
-            "ETF weights upload must be named one of: ETF1.csv.",
         )
 
     def test_stage_csv_upload_rejects_invalid_content_type(self) -> None:
@@ -164,7 +146,6 @@ class EtfUploadRouteTests(unittest.TestCase):
                         content_type="application/json",
                     ),
                     label="ETF weights",
-                    allowed_filenames=frozenset({"ETF1.csv"}),
                 )
             )
 
@@ -181,7 +162,6 @@ class EtfUploadRouteTests(unittest.TestCase):
                 etfs._stage_csv_upload(
                     upload=self._upload_file("ETF1.csv", ""),
                     label="ETF weights",
-                    allowed_filenames=frozenset({"ETF1.csv"}),
                 )
             )
 
@@ -195,7 +175,6 @@ class EtfUploadRouteTests(unittest.TestCase):
             etfs._stage_csv_upload(
                 upload=self._upload_file("ETF1.csv", csv_content),
                 label="ETF weights",
-                allowed_filenames=frozenset({"ETF1.csv"}),
             )
         )
         logger.info("Staged upload created at %s", staged_path)
@@ -203,27 +182,11 @@ class EtfUploadRouteTests(unittest.TestCase):
         self.assertEqual(staged_path.parent, self.temp_uploads_dir)
         self.assertEqual(staged_path.read_text(encoding="utf-8"), csv_content)
 
-    def test_upload_route_rejects_wrong_etf_filename(self) -> None:
-        """Ensure upload_etf_analytics() rejects unsupported ETF file names."""
-        with self.assertRaises(HTTPException) as captured:
-            asyncio.run(
-                upload_etf_analytics(
-                    etf_file=self._upload_file("custom.csv", "name,weight\nAAPL,1.0\n"),
-                    limit=1,
-                )
-            )
-
-        self.assertEqual(captured.exception.status_code, 422)
-        self.assertEqual(
-            captured.exception.detail,
-            "ETF weights upload must be named one of: ETF1.csv, ETF2.csv.",
-        )
-
     def test_upload_route_returns_response_for_single_etf_file(self) -> None:
         """Ensure upload_etf_analytics() returns a persisted response on success."""
         response = asyncio.run(
             upload_etf_analytics(
-                etf_file=self._upload_file("ETF1.csv", "name,weight\nA,1.0\n"),
+                etf_file=self._upload_file("custom-name.csv", "name,weight\nA,1.0\n"),
                 limit=1,
             )
         )

@@ -1,11 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+import asyncio
+import json
+from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import TypeVar
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from app.repositories.csv_repository import cleanup_staged_upload, create_staged_upload_path
+from app.services.etf_events import (
+    ETFEventQueue,
+    publish_etf_uploaded_event,
+    subscribe_etf_events,
+    unsubscribe_etf_events,
+)
 
 from app.schemas.etf import (
     EtfCatalogResponse,
@@ -35,8 +44,7 @@ CSV_CONTENT_TYPES = {
     "text/csv",
     "application/csv",
 }
-# Make immutable
-ALLOWED_ETF_UPLOAD_FILENAMES = frozenset({"ETF1.csv", "ETF2.csv"})
+ETF_UPLOAD_FILENAME_REGEX = r"^ETF\d*\.csv$"
 UPLOAD_READ_CHUNK_BYTES = 64 * 1024
 
 
@@ -143,6 +151,7 @@ async def upload_etf_analytics(
 ) -> UploadedEtfAnalyticsResponse:
     """
     Analyze one uploaded ETF weights file against the bundled prices file.
+    On success, publish the event payload.
 
     Response:
     ```
@@ -156,22 +165,59 @@ async def upload_etf_analytics(
     )
     ```
     """
-    etf_filename = Path(etf_file.filename or "ETF1.csv").name
     etf_staged_path = await _stage_csv_upload(
         upload=etf_file,
         label="ETF weights",
-        allowed_filenames=ALLOWED_ETF_UPLOAD_FILENAMES,
     )
     try:
-        return _handle_upload_call(
+        analytics = _handle_upload_call(
             lambda: analyze_uploaded_etf(
-                etf_file_name=etf_filename,
                 etf_staged_path=etf_staged_path,
                 top_holdings_limit=limit,
             )
         )
+
+        # Publish the event payload to the pub/sub sys.
+        publish_etf_uploaded_event(
+            {
+                "event_type": "etf_uploaded",
+                "etf_id": analytics.etf_id,
+                "file_name": analytics.file_name,
+            }
+        )
+        return analytics
     finally:
         cleanup_staged_upload(etf_staged_path)
+
+
+@router.get("/subscribe")
+async def subscribe_to_etf_events(request: Request) -> StreamingResponse:
+    """Stream ETF upload completion events for live frontend catalog refresh."""
+    # Subscribe to the event queue
+    event_queue: ETFEventQueue = subscribe_etf_events()
+
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+
+                try:
+                    event_payload = await asyncio.wait_for(event_queue.get(), timeout=15.0)
+                    yield f"event: etf_uploaded\ndata: {json.dumps(event_payload)}\n\n"
+                except asyncio.TimeoutError:
+                    yield "event: keepalive\ndata: {}\n\n"
+        finally:
+            unsubscribe_etf_events(event_queue)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 def _handle_service_call(operation: Callable[[], ResponseT]) -> ResponseT:
@@ -186,7 +232,7 @@ def _handle_service_call(operation: Callable[[], ResponseT]) -> ResponseT:
     except DatasetValidationError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Bundled ETF data failed validation.",
+            detail="ETF dataset failed validation.",
         ) from exc
     except InvalidAsOfDateError as exc:
         raise HTTPException(
@@ -209,7 +255,6 @@ def _handle_upload_call(operation: Callable[[], ResponseT]) -> ResponseT:
 async def _stage_csv_upload(
     upload: UploadFile,
     label: str,
-    allowed_filenames: frozenset[str],
 ) -> Path:
     """Validate and stage one uploaded CSV file before analysis."""
     filename = Path(upload.filename or "").name
@@ -219,14 +264,6 @@ async def _stage_csv_upload(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=f"{label} upload must be a .csv file.",
         )
-    if filename not in allowed_filenames:
-        await upload.close()
-        allowed_names = ", ".join(sorted(allowed_filenames))
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"{label} upload must be named one of: {allowed_names}.",
-        )
-
     if upload.content_type and upload.content_type not in CSV_CONTENT_TYPES:
         await upload.close()
         raise HTTPException(

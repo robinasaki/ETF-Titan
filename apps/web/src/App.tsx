@@ -5,6 +5,7 @@ import { MainHeader } from "./components/MainPage/MainHeader";
 import { ETFTable } from "./components/MainPage/ETFTable";
 import { ETFTableHeader } from "./components/MainPage/ETFTableHeader";
 import { ETFTopHoldingsPanel } from "./components/MainPage/ETFTopHoldingsPanel";
+import { Toast } from "./components/Common/Toast";
 import { useETFHoldings } from "./hooks/getETFHoldings";
 import { useKeyboardShortcutRegistration } from "./shortcuts/KeyboardShortcutLayer";
 import { formatDisplayDate } from "./utils/formatters";
@@ -19,7 +20,10 @@ export default function App() {
     isLoadingCatalog,
     isLoadingHoldings,
     latestDate,
+    uploadToastMessage,
     refreshHoldings,
+    uploadEtfCsv,
+    clearUploadToast,
     setActiveEtfId,
   } = useETFHoldings(asOfDate);
   const isLoading = isLoadingCatalog || isLoadingHoldings;
@@ -82,6 +86,7 @@ export default function App() {
       <MainHeader />
 
       <YStack
+        position="relative"
         width="100%"
         maxWidth={1100}
         marginHorizontal="auto"
@@ -106,10 +111,17 @@ export default function App() {
           isLoadingHoldings={isLoadingHoldings}
           errorMessage={errorMessage}
           refreshHoldings={refreshHoldings}
+          uploadEtfCsv={uploadEtfCsv}
           setActiveEtfId={setActiveEtfId}
           searchInputRef={searchInputRef}
           searchResetVersion={searchResetVersion}
         />
+        {uploadToastMessage ? (
+          <Toast
+            message={uploadToastMessage}
+            onDismiss={clearUploadToast}
+          />
+        ) : null}
       </YStack>
     </YStack>
   );

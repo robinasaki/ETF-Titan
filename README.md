@@ -49,6 +49,7 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 - Bundled sample datasets are treated as non-sensitive local fixtures for development.
 - No packaging or containerization work is required for the current scope.
 - Currency handling is fixed to USD with no conversion layer.
+- The user can upload only ETF CSVs following the given format, and cannot commit updates or delete operations.
 - Implementation-specific assumptions are intentionally split by app:
   - backend assumptions: `apps/server/README.md`
   - frontend assumptions: `apps/web/README.md`
@@ -75,6 +76,8 @@ The backend exposes:
 See `apps/server/README.md` for backend-specific behavior and `apps/server/app/routers/README.md` for route-level notes.
 
 ## Getting Started
+
+For this project, we're using Bun 1.3.12, Python 1.13.5 and pip 25.1. The TypeScript version is included in the `bun.lock` frozen lock.
 
 From the repository root:
 
@@ -132,7 +135,8 @@ This runs:
 The dedicated load test is intentionally separate from the normal test suite:
 
 ```bash
-bun run load test
+bun run load
 ```
 
-That command regenerates large synthetic CSV fixtures and runs only the backend load-focused test file.
+That command regenerates max-valid ETF CSV fixtures from bundled `prices.csv` symbols and runs only the backend load-focused test file.
+The load upload artifact is intentionally retained in `apps/server/storage/uploads/` after success; run `bun run clear` when you want to remove server upload buckets.

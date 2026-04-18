@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import {
     Button,
     ScrollView,
@@ -14,10 +14,12 @@ import {
     formatUsdPrice,
     normalizeSymbol,
 } from "../../utils/formatters";
+import { AppButton } from "../Common/AppButton";
 import { AppInput } from "../Common/AppInput";
 import {
     IconAdjustmentsHorizontal,
     IconArrowLeft,
+    IconUpload,
 } from "@tabler/icons-react";
 
 type SortKey = "name" | "weight" | "latest_close";
@@ -54,6 +56,7 @@ type ETFTableProps = {
     isLoadingHoldings: boolean;
     errorMessage: string;
     refreshHoldings: () => Promise<void>;
+    uploadEtfCsv: (file: File) => Promise<void>;
     setActiveEtfId: (etfId: string) => void;
     searchInputRef?: RefObject<any>;
     searchResetVersion?: number;
@@ -186,6 +189,7 @@ export function ETFTable({
     isLoadingHoldings,
     errorMessage,
     refreshHoldings,
+    uploadEtfCsv,
     setActiveEtfId,
     searchInputRef,
     searchResetVersion = 0,
@@ -194,6 +198,7 @@ export function ETFTable({
     const [searchValue, setSearchValue] = useState("");
     const [activeSort, setActiveSort] = useState<SortState>(INITIAL_SORT);
     const [isControlsExpanded, setIsControlsExpanded] = useState(true);
+    const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         setSearchValue("");
@@ -326,13 +331,41 @@ export function ETFTable({
 
                                                     <XStack marginTop={6}>
                                                         <Text color={theme.textSecondary} fontSize={14}>
-                                                            Select a bundled ETF and filter the visible symbols.
+                                                            Upload or select an ETF and filter the visible symbols.
                                                         </Text>
                                                     </XStack>
+
+                                                    <YStack marginTop={14}>
+                                                        <input
+                                                            ref={uploadInputRef}
+                                                            type="file"
+                                                            accept=".csv,text/csv"
+                                                            style={{ display: "none" }}
+                                                            onChange={(event) => {
+                                                                const selectedFile = event.target.files?.[0];
+                                                                event.target.value = "";
+                                                                if (!selectedFile) {
+                                                                    return;
+                                                                }
+                                                                void uploadEtfCsv(selectedFile);
+                                                            }}
+                                                        />
+
+                                                        <AppButton
+                                                            tone="primary"
+                                                            icon={IconUpload}
+                                                            maxWidth="100%"
+                                                            onPress={() => {
+                                                                uploadInputRef.current?.click();
+                                                            }}
+                                                        >
+                                                            Upload ETF CSV
+                                                        </AppButton>
+                                                    </YStack>
                                                 </YStack>
                                             </YStack>
 
-                                            <YStack paddingHorizontal={10}>
+                                            <YStack paddingHorizontal={10} paddingBottom={24}>
                                                 <AppInput
                                                     ref={searchInputRef}
                                                     value={searchValue}

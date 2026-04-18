@@ -12,6 +12,7 @@ type ETFTableProps = {
   isLoadingHoldings: boolean;
   errorMessage: string;
   refreshHoldings: () => Promise<void>;
+  uploadEtfCsv: (file: File) => Promise<void>;
   setActiveEtfId: (etfId: string) => void;
 };
 
@@ -23,6 +24,7 @@ function createProps(overrides: Partial<ETFTableProps> = {}): ETFTableProps {
     isLoadingHoldings: false,
     errorMessage: "",
     refreshHoldings: vi.fn(async () => {}),
+    uploadEtfCsv: vi.fn(async () => {}),
     setActiveEtfId: vi.fn(),
     ...overrides,
   };

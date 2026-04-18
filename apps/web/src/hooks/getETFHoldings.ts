@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useToastState } from "./useToastState";
 
 export type ETFCatalogItem = {
   id: string;
@@ -22,15 +23,23 @@ type ETFHoldingsResponse = {
   items: ETFHolding[];
 };
 
+type UploadEtfResponse = {
+  etf_id: string;
+  file_name: string;
+};
+
 type UseETFHoldingsResult = {
   activeEtfId: string;
   etfs: ETFCatalogItem[];
   holdings: ETFHolding[];
   latestDate: string;
+  uploadToastMessage: string;
   isLoadingCatalog: boolean;
   isLoadingHoldings: boolean;
   errorMessage: string;
   refreshHoldings: () => Promise<void>;
+  uploadEtfCsv: (file: File) => Promise<void>;
+  clearUploadToast: () => void;
   setActiveEtfId: (etfId: string) => void;
 };
 
@@ -50,60 +59,77 @@ async function requestJson<ResponseType>(
   return (await response.json()) as ResponseType;
 }
 
+async function readServerErrorDetail(response: Response): Promise<string> {
+  try {
+    const payload = (await response.json()) as { detail?: string };
+    if (payload.detail) {
+      return payload.detail;
+    }
+  } catch {
+    // Fall back to generic error detail below.
+  }
+  return `Request failed with status ${response.status}.`;
+}
+
 /**
- * Get all default pre-loaded ETFs.
+ * Load uploaded ETFs and holdings data from backend endpoints.
  */
 export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
   const [etfs, setEtfs] = useState<ETFCatalogItem[]>([]);
   const [activeEtfId, setActiveEtfId] = useState("");
   const [holdings, setHoldings] = useState<ETFHolding[]>([]);
   const [latestDate, setLatestDate] = useState("");
+  const {
+    toastMessage: uploadToastMessage,
+    showToast: showUploadToast,
+    clearToast: clearUploadToast,
+  } = useToastState();
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isLoadingHoldings, setIsLoadingHoldings] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  /**
+   * Gets the ETF ids and their symbol counts.
+   */
+  const loadCatalog = useCallback(async (signal?: AbortSignal) => {
+    setIsLoadingCatalog(true);
+    setErrorMessage("");
+
+    try {
+      const data = await requestJson<ETFCatalogResponse>("/etfs", signal);
+      setEtfs(data.items);
+      setActiveEtfId((currentEtfId) => {
+        if (currentEtfId && data.items.some((item) => item.id === currentEtfId)) {
+          return currentEtfId;
+        }
+        return data.items[0]?.id || "";
+      });
+    } catch (error) {
+      if (signal?.aborted) {
+        return;
+      }
+
+      const message =
+        error instanceof Error ? error.message : "ETF catalog could not be loaded.";
+      setErrorMessage(message);
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoadingCatalog(false);
+      }
+    }
+  }, []);
 
   /**
    * Obtain the ETF catalog. Id and constituent counts.
    */
   useEffect(() => {
     const abortController = new AbortController();
-
-    const loadCatalog = async () => {
-      setIsLoadingCatalog(true);
-      setErrorMessage("");
-
-      try {
-        const data = await requestJson<ETFCatalogResponse>(
-          "/etfs",
-          abortController.signal
-        );
-
-        setEtfs(data.items);
-        setActiveEtfId((currentEtfId) => currentEtfId || data.items[0]?.id || "");
-      } catch (error) {
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        const message =
-          error instanceof Error
-            ? error.message
-            : "ETF catalog could not be loaded.";
-
-        setErrorMessage(message);
-      } finally {
-        if (!abortController.signal.aborted) {
-          setIsLoadingCatalog(false);
-        }
-      }
-    };
-
-    void loadCatalog();
+    void loadCatalog(abortController.signal);
 
     return () => {
       abortController.abort();
     };
-  }, []);
+  }, [loadCatalog]);
 
   /**
    * Load selected ETF holdings.
@@ -145,6 +171,59 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
     }
   }, [activeEtfId, asOfDate]);
 
+  /**
+   * Upload the csv.
+   * On success, refresh the catalog and sets activeETFId.
+   * On failure, read server detail and show toast.
+   */
+  const uploadEtfCsv = useCallback(async (file: File) => {
+    const payload = new FormData(); // Create a multipart payload container
+    payload.append("etf_file", file);
+
+    try {
+      const response = await fetch("/etfs/upload?limit=5", {
+        method: "POST",
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const detail = await readServerErrorDetail(response);
+        showUploadToast(detail);
+        return;
+      }
+
+      const data = (await response.json()) as UploadEtfResponse;
+      await loadCatalog();
+      setActiveEtfId(data.etf_id);
+      clearUploadToast();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "ETF upload request failed.";
+      showUploadToast(message);
+    }
+  }, [clearUploadToast, loadCatalog, showUploadToast]);
+
+  useEffect(() => {
+    if (typeof EventSource === "undefined") {
+      return;
+    }
+
+    const eventSource = new EventSource("/etfs/subscribe");
+    const refreshCatalogOnUpload = () => {
+      void loadCatalog();
+    };
+
+    eventSource.addEventListener("etf_uploaded", refreshCatalogOnUpload);
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.removeEventListener("etf_uploaded", refreshCatalogOnUpload);
+      eventSource.close();
+    };
+  }, [loadCatalog]);
+
   useEffect(() => {
     void refreshHoldings();
   }, [refreshHoldings]);
@@ -160,14 +239,18 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
       etfs,
       holdings,
       latestDate,
+      uploadToastMessage,
       isLoadingCatalog,
       isLoadingHoldings,
       errorMessage,
       refreshHoldings,
+      uploadEtfCsv,
+      clearUploadToast,
       setActiveEtfId,
     }),
     [
       activeEtfId,
+      clearUploadToast,
       errorMessage,
       etfs,
       holdings,
@@ -175,6 +258,8 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
       isLoadingHoldings,
       latestDate,
       refreshHoldings,
+      uploadEtfCsv,
+      uploadToastMessage,
     ]
   );
 }

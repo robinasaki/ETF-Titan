@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from types import MappingProxyType
+
+import re
 from uuid import uuid4
 
 import pandas as pd
@@ -13,32 +14,77 @@ Construct the directory path.
 """
 REPO_ROOT = Path(__file__).resolve().parents[4]
 STORAGE_DIR = REPO_ROOT / "apps" / "server" / "storage"
-DEFAULT_DATA_DIR = STORAGE_DIR / "default"
-PRICES_FILE = DEFAULT_DATA_DIR / "prices.csv"
+PRICES_DATA_DIR = STORAGE_DIR / "prices"
+PRICES_FILE = PRICES_DATA_DIR / "prices.csv"
 TEMP_UPLOADS_DIR = STORAGE_DIR / "tmp"
-UPLOADS_DIR = REPO_ROOT / "apps" / "server" / "storage" / "uploads"
+UPLOADS_DIR = STORAGE_DIR / "uploads"
 
-# Use MappingProxyType() to ensure the stream is read-only.
-"""Server-side ETF data file allowed names."""
-ETF_DATA_FILES = MappingProxyType(
-    {
-        "ETF1": DEFAULT_DATA_DIR / "ETF1.csv",
-        "ETF2": DEFAULT_DATA_DIR / "ETF2.csv",
-    }
-)
+# ETF{n}.csv
+ETF_UPLOAD_FILENAME_PATTERN = re.compile(r"^ETF\d*\.csv$")
+ETF_ID_PATTERN = re.compile(r"^ETF\d*$")
 
 
 class UnknownEtfError(ValueError):
-    """Raised when an ETF id is not part of the supported sample datasets."""
+    """Raised when an ETF id cannot be resolved to an uploaded ETF CSV."""
 
 
 class DatasetValidationError(ValueError):
-    """Raised when one of the bundled CSV files is malformed."""
+    """Raised when one of the required CSV files is malformed."""
 
 
 def get_supported_etf_ids() -> tuple[str, ...]:
-    """Return the built-in default ETF csv ids. For example, `ETF1`, `ETF2`, etc."""
-    return tuple(ETF_DATA_FILES.keys())
+    """Return all uploaded ETF ids currently persisted on disk."""
+    return tuple(path.stem.upper() for path in list_uploaded_etf_files())
+
+
+def list_uploaded_etf_files() -> tuple[Path, ...]:
+    """Return ETF upload files sorted by numeric ETF id.
+    
+    response:
+    ```
+    (Path(".../uploads/ETF1.csv"), Path(".../uploads/ETF3.csv"), Path(".../uploads/ETF10.csv"))
+    ```
+    """
+    if not UPLOADS_DIR.exists():
+        return ()
+
+    valid_files: list[tuple[int, Path]] = []
+    for path in UPLOADS_DIR.iterdir():
+        if not path.is_file():
+            continue
+        if not ETF_UPLOAD_FILENAME_PATTERN.fullmatch(path.name):
+            continue
+
+        etf_number = _extract_etf_number_from_name(path.name)
+        valid_files.append((etf_number, path))
+
+    return tuple(path for _, path in sorted(valid_files, key=lambda item: item[0]))
+
+
+def resolve_uploaded_etf_file_path(etf_id: str) -> Path:
+    """Ensure the ETF id follows the ETF CSV regex, and the file actually exist.
+    This is mostly used for API call validation now. It ensures the dynamic routing var etf_id is properly defined, 
+    and the CSV file actually exists.
+
+    We don't directly call _require_existing_file() here because UnknownEtfError() and DatasetValidationError() should map to diff HTTP responses.
+    """
+    normalized_etf_id = etf_id.strip().upper()
+    if not ETF_ID_PATTERN.fullmatch(normalized_etf_id):
+        raise UnknownEtfError("ETF id is not supported.")
+
+    candidate = UPLOADS_DIR / f"{normalized_etf_id}.csv"
+    if not candidate.is_file():
+        raise UnknownEtfError("ETF id is not supported.")
+    return candidate
+
+
+def get_next_uploaded_etf_filename() -> str:
+    """Return the next ETF filename using max(existing ETF CSV id) + 1."""
+    uploaded_files = list_uploaded_etf_files()
+    highest_number = 0
+    for path in uploaded_files:
+        highest_number = max(highest_number, _extract_etf_number_from_name(path.name))
+    return f"ETF{highest_number + 1}.csv"
 
 
 def _require_existing_file(path: Path) -> None:
@@ -47,7 +93,7 @@ def _require_existing_file(path: Path) -> None:
 
     Usage:
     ```python
-    _require_existing_file(Path("apps/server/storage/default/prices.csv"))
+    _require_existing_file(Path("apps/server/storage/prices/prices.csv"))
     ```
     """
     if not path.is_file():
@@ -56,7 +102,9 @@ def _require_existing_file(path: Path) -> None:
 
 @lru_cache
 def load_prices_frame() -> pd.DataFrame:
-    """Load the default prices.csv into a pd.DataFrame."""
+    """Load the bundled prices.csv into a pd.DataFrame.
+    This is using in memory cache since the prices.csv is small and fixed.
+    """
     _require_existing_file(PRICES_FILE)
 
     try:
@@ -66,15 +114,9 @@ def load_prices_frame() -> pd.DataFrame:
     return _normalize_prices_frame(frame)
 
 
-@lru_cache
 def load_etf_weights_frame(etf_id: str) -> pd.DataFrame:
-    """Load the default ETF csvs into a pd.DataFrame."""
-    normalized_etf_id = etf_id.strip().upper()
-    path = ETF_DATA_FILES.get(normalized_etf_id)
-    if path is None:
-        raise UnknownEtfError("ETF id is not supported.")
-
-    _require_existing_file(path)
+    """Load one uploaded ETF weights CSV into a pd.DataFrame."""
+    path = resolve_uploaded_etf_file_path(etf_id)
 
     try:
         frame = pd.read_csv(path)
@@ -107,12 +149,19 @@ def load_uploaded_etf_weights_frame(path: Path) -> pd.DataFrame:
     return _normalize_weights_frame(frame)
 
 
-def persist_validated_upload(staged_path: Path, filename: str) -> Path:
+def persist_validated_upload(staged_path: Path) -> Path:
     """Promote a validated staged upload into permanent server-side storage."""
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    stored_file_path = UPLOADS_DIR / Path(filename).name
+    stored_file_path = UPLOADS_DIR / get_next_uploaded_etf_filename()
     staged_path.replace(stored_file_path)
     return stored_file_path
+
+
+def _extract_etf_number_from_name(filename: str) -> int:
+    """Obtain the n from ETF{n}.csv file name for sorting/allocation."""
+    stem = Path(filename).stem.upper()
+    digits = stem[3:]
+    return int(digits) if digits else 0
 
 
 def _normalize_weights_frame(frame: pd.DataFrame) -> pd.DataFrame:

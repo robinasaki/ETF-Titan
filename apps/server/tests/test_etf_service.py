@@ -279,8 +279,8 @@ class EtfServiceTests(unittest.TestCase):
         ):
             etf_service._build_holdings_frame(invalid_weights, self.prices_frame)
 
-    def test_build_named_holdings_frame_normalizes_etf_id_and_uses_default_loaders(self) -> None:
-        """Ensure _build_named_holdings_frame() normalizes ids and delegates to default loaders."""
+    def test_build_named_holdings_frame_normalizes_etf_id_and_uses_csv_loaders(self) -> None:
+        """Ensure _build_named_holdings_frame() normalizes ids and delegates to repository loaders."""
         with (
             patch.object(etf_service, "load_etf_weights_frame", return_value=self.weights_frame) as load_weights,
             patch.object(etf_service, "load_prices_frame", return_value=self.prices_frame) as load_prices,
@@ -296,25 +296,21 @@ class EtfServiceTests(unittest.TestCase):
         self.assertEqual(holdings_frame["latest_holding_value"].tolist(), [66.0, 84.0])
         pd.testing.assert_frame_equal(prices_frame, self.prices_frame)
 
-    def test_build_uploaded_etf_analytics_item_returns_combined_sections(self) -> None:
-        """Ensure _build_uploaded_etf_analytics_item() returns holdings, price series, and top holdings."""
-        staged_path = self.temp_path / "ETF1.csv"
-        staged_path.write_text("name,weight\nAAPL,0.6\nMSFT,0.4\n", encoding="utf-8")
-        logger.info("Created uploaded ETF fixture at %s", staged_path)
+    def test_build_uploaded_etf_analytics_response_returns_combined_sections(self) -> None:
+        """Ensure _build_uploaded_etf_analytics_response() returns all analytics sections."""
+        latest_date, holdings_frame, aligned_prices_frame = etf_service._build_holdings_frame(
+            self.weights_frame,
+            self.prices_frame,
+        )
 
-        with patch.object(
-            etf_service,
-            "load_uploaded_etf_weights_frame",
-            return_value=self.weights_frame,
-        ) as load_uploaded_weights:
-            response = etf_service._build_uploaded_etf_analytics_item(
-                etf_file_name="ETF1.csv",
-                etf_staged_path=staged_path,
-                prices_frame=self.prices_frame,
-                top_holdings_limit=1,
-            )
+        response = etf_service._build_uploaded_etf_analytics_response(
+            persisted_file_name="ETF1.csv",
+            latest_date=latest_date,
+            holdings_frame=holdings_frame,
+            prices_frame=aligned_prices_frame,
+            top_holdings_limit=1,
+        )
 
-        load_uploaded_weights.assert_called_once_with(staged_path)
         self.assertEqual(response.etf_id, "ETF1")
         self.assertEqual(response.file_name, "ETF1.csv")
         self.assertEqual(response.latest_date, "2024-01-02")
@@ -326,7 +322,7 @@ class EtfServiceTests(unittest.TestCase):
         self.assertEqual([item.name for item in response.top_holdings], ["MSFT"])
 
     def test_analyze_uploaded_etf_returns_item_and_persists_uploaded_file(self) -> None:
-        """Ensure analyze_uploaded_etf() uses bundled prices and persists the ETF upload."""
+        """Ensure analyze_uploaded_etf() uses prices data and persists the ETF upload."""
         etf_path = self.temp_path / "staged-ETF1.csv"
         etf_path.write_text("fixture", encoding="utf-8")
         logger.info("Created staged upload fixture at %s", etf_path)
@@ -344,26 +340,64 @@ class EtfServiceTests(unittest.TestCase):
             patch.object(etf_service, "load_prices_frame", return_value=self.prices_frame) as load_prices,
             patch.object(
                 etf_service,
-                "_build_uploaded_etf_analytics_item",
+                "load_uploaded_etf_weights_frame",
+                return_value=self.weights_frame,
+            ) as load_uploaded_weights,
+            patch.object(
+                etf_service,
+                "_build_holdings_frame",
+                return_value=("2024-01-02", self.weights_frame, self.prices_frame),
+            ) as build_holdings,
+            patch.object(
+                etf_service,
+                "_build_uploaded_etf_analytics_response",
                 return_value=uploaded_item,
-            ) as build_item,
-            patch.object(etf_service, "persist_validated_upload") as persist_upload,
+            ) as build_response,
+            patch.object(
+                etf_service,
+                "persist_validated_upload",
+                return_value=self.temp_path / "ETF9.csv",
+            ) as persist_upload,
         ):
             response = etf_service.analyze_uploaded_etf(
-                etf_file_name="ETF1.csv",
                 etf_staged_path=etf_path,
                 top_holdings_limit=2,
             )
 
         load_prices.assert_called_once_with()
-        build_item.assert_called_once_with(
-            etf_file_name="ETF1.csv",
-            etf_staged_path=etf_path,
-            prices_frame=self.prices_frame,
-            top_holdings_limit=2,
+        load_uploaded_weights.assert_called_once_with(etf_path)
+        build_holdings.assert_called_once_with(self.weights_frame, self.prices_frame)
+        persist_upload.assert_called_once_with(etf_path)
+        self.assertEqual(
+            build_response.call_args.kwargs,
+            {
+                "persisted_file_name": "ETF9.csv",
+                "latest_date": "2024-01-02",
+                "holdings_frame": self.weights_frame,
+                "prices_frame": self.prices_frame,
+                "top_holdings_limit": 2,
+            },
         )
-        persist_upload.assert_called_once_with(etf_path, "ETF1.csv")
         self.assertEqual(response.etf_id, "ETF1")
+
+    def test_analyze_uploaded_etf_does_not_persist_invalid_csv(self) -> None:
+        """Ensure malformed uploaded CSVs fail before persistence."""
+        etf_path = self.temp_path / "staged-invalid.csv"
+        etf_path.write_text("fixture", encoding="utf-8")
+
+        with (
+            patch.object(etf_service, "load_prices_frame", return_value=self.prices_frame),
+            patch.object(
+                etf_service,
+                "load_uploaded_etf_weights_frame",
+                side_effect=etf_service.DatasetValidationError("bad upload"),
+            ),
+            patch.object(etf_service, "persist_validated_upload") as persist_upload,
+        ):
+            with self.assertRaises(etf_service.DatasetValidationError):
+                etf_service.analyze_uploaded_etf(etf_staged_path=etf_path, top_holdings_limit=2)
+
+        persist_upload.assert_not_called()
 
     def test_serialize_price_series_items_reconstructs_weighted_history(self) -> None:
         """Ensure _serialize_price_series_items() converts reconstructed ETF prices into response points."""

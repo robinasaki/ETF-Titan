@@ -164,10 +164,6 @@ export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProp
 
       {!topHoldingsErrorMessage && !hasData ? (
         <YStack
-          borderWidth={1}
-          borderColor={theme.paneBorderPrimary}
-          borderRadius={12}
-          padding={20}
           alignItems="center"
           justifyContent="center"
         >

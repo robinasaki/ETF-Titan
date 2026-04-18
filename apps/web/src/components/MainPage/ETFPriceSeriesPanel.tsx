@@ -63,18 +63,14 @@ function PriceSeriesGraph({
 
   if (data.length === 0) {
     return (
-      <YStack
-        borderWidth={1}
-        borderColor={theme.paneBorderPrimary}
-        borderRadius={12}
-        padding={20}
+      <XStack
         alignItems="center"
         justifyContent="center"
       >
         <Text color={theme.textSecondary} fontSize={14}>
           {isLoadingPriceSeries ? "Loading reconstructed price history..." : "No chart data."}
         </Text>
-      </YStack>
+      </XStack>
     );
   }
 

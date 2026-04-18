@@ -3,7 +3,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import MappingProxyType
 from unittest.mock import patch
 
 import pandas as pd
@@ -27,7 +26,6 @@ class CsvRepositoryTests(unittest.TestCase):
     def setUp(self) -> None:
         """Load the default CSVs. Create a temp test directory."""
         csv_repository.load_prices_frame.cache_clear()
-        csv_repository.load_etf_weights_frame.cache_clear()
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_path = Path(self.temp_dir.name)
         logger.info("Created temporary test directory at %s", self.temp_path)
@@ -35,23 +33,19 @@ class CsvRepositoryTests(unittest.TestCase):
     def tearDown(self) -> None:
         """Clean up the temp test directory recursively."""
         csv_repository.load_prices_frame.cache_clear()
-        csv_repository.load_etf_weights_frame.cache_clear()
         logger.info("Cleaning up temporary test directory at %s", self.temp_path)
         self.temp_dir.cleanup()
 
     def test_load_etf_weights_frame_normalizes_id_and_columns(self) -> None:
-        """Check if load_etf_weights_frame() handles a default ETF CSV file even when the input is messy."""
-        weights_path = self.temp_path / "ETF1.csv"
+        """Check if load_etf_weights_frame() handles one uploaded ETF CSV with a messy id."""
+        uploads_dir = self.temp_path / "uploads"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        weights_path = uploads_dir / "ETF7.csv"
         weights_path.write_text(" Name , Weight \n aapl ,0.6\n msft,0.4\n", encoding="utf-8") # Write CSV content into tmp file
         logger.info("Wrote ETF weights fixture to %s", weights_path)
 
-        # Temp replace csv_repository.ETF_DATA_FILES during the test
-        with patch.object(
-            csv_repository,
-            "ETF_DATA_FILES",
-            MappingProxyType({"ETF1": weights_path}),
-        ):
-            frame = csv_repository.load_etf_weights_frame(" etf1 ")
+        with patch.object(csv_repository, "UPLOADS_DIR", uploads_dir):
+            frame = csv_repository.load_etf_weights_frame(" etf7 ")
 
         expected = pd.DataFrame(
             [
@@ -120,22 +114,31 @@ class CsvRepositoryTests(unittest.TestCase):
 
         self.assertFalse(staged_path.exists())
 
-    def test_persist_validated_upload_moves_file_with_safe_basename(self) -> None:
-        """Test the stage -> persistent CSV move."""
+    def test_persist_validated_upload_moves_file_with_generated_etf_name(self) -> None:
+        """Test the stage -> persistent CSV move with generated ETF filename."""
         staged_path = self.temp_path / "staged.csv"
         staged_path.write_text("name,weight\nAAPL,1.0\n", encoding="utf-8")
         logger.info("Created staged upload fixture at %s", staged_path)
 
         with patch.object(csv_repository, "UPLOADS_DIR", self.temp_path / "uploads"):
-            stored_path = csv_repository.persist_validated_upload(
-                staged_path,
-                "../../ETF1.csv",
-            )
+            stored_path = csv_repository.persist_validated_upload(staged_path)
         logger.info("Validated upload moved to %s", stored_path)
 
         self.assertEqual(stored_path, self.temp_path / "uploads" / "ETF1.csv")
         self.assertTrue(stored_path.exists())
         self.assertFalse(staged_path.exists())
+
+    def test_get_next_uploaded_etf_filename_uses_max_plus_one(self) -> None:
+        """Ensure uploaded filenames are allocated as max(existing)+1."""
+        uploads_dir = self.temp_path / "uploads"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        (uploads_dir / "ETF1.csv").write_text("name,weight\nAAPL,1.0\n", encoding="utf-8")
+        (uploads_dir / "ETF4.csv").write_text("name,weight\nMSFT,1.0\n", encoding="utf-8")
+
+        with patch.object(csv_repository, "UPLOADS_DIR", uploads_dir):
+            next_filename = csv_repository.get_next_uploaded_etf_filename()
+
+        self.assertEqual(next_filename, "ETF5.csv")
 
 
 if __name__ == "__main__":
