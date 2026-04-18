@@ -18,7 +18,6 @@ This backend exposes a small FastAPI service for ETF analytics over user-uploade
 - `GET /etfs/{etf_id}/price-series`
 - `GET /etfs/{etf_id}/top-holdings?limit=5`
 - `POST /etfs/upload`
-- `GET /etfs/subscribe`
 
 ## Data Flow
 
@@ -34,34 +33,11 @@ For upload analysis:
 2. The uploaded ETF CSV is streamed into a temporary staged file.
 3. The service loads the bundled `prices.csv`, parses the staged ETF CSV, and computes holdings, price series, and top holdings.
 4. The validated ETF upload is promoted into `apps/server/storage/uploads/` as `ETF{n}.csv`.
-5. The backend publishes an upload-complete event through a lightweight in-memory pub/sub queue used by the SSE endpoint.
-6. The temporary staged file is cleaned up whether the call succeeds or fails.
+5. The temporary staged file is cleaned up whether the call succeeds or fails.
 
-## Upload Event Delivery
+*Note*
 
-The upload flow uses two subscription layers:
-
-1. **Server-internal pub/sub** (`app/services/etf_events.py`)
-   - `subscribe_etf_events()` registers one `asyncio.Queue` per subscriber.
-   - `publish_etf_uploaded_event(...)` fans out an upload-complete payload to all current queues.
-2. **Client-facing SSE subscription** (`GET /etfs/subscribe`)
-   - `subscribe_to_etf_events(...)` bridges one queue to a streaming HTTP response (`text/event-stream`).
-   - Each queued payload is emitted as `event: etf_uploaded` for browser `EventSource` listeners.
-   - A periodic keepalive event is emitted when no upload event arrives within the timeout window.
-
-End-to-end upload notification sequence:
-
-1. Frontend opens `EventSource("/etfs/subscribe")` (long-lived SSE connection).
-2. Frontend posts `POST /etfs/upload` with multipart CSV data.
-3. Backend stages, validates, analyzes, and persists the upload.
-4. Backend publishes `etf_uploaded` to in-memory subscribers.
-5. `/etfs/subscribe` forwards that payload over SSE to connected frontend listeners.
-6. Frontend listener refreshes catalog state after receiving `etf_uploaded`.
-
-Notes:
-
-- The uploader receives the normal upload HTTP response directly; SSE is used for live refresh notifications (including other connected tabs/clients).
-- Pub/sub is process-local and non-persistent (no replay if a client is disconnected).
+The CSV validation logics is a part of the upload pipeline here. In an industry setting, we might wish to factor these two into separate workers (with proper concurrencies, error boundaries, etc.).
 
 ## Upload Contract
 
@@ -95,7 +71,6 @@ The upload endpoint also accepts a `limit` query param for top holdings, constra
 - Uploaded ETF CSV parsing validates required columns, numeric coercion, duplicate symbols, and symbol coverage in prices data.
 - Temporary staged files live in `apps/server/storage/tmp/`.
 - Validated uploaded ETF files are stored in `apps/server/storage/uploads/`.
-- Upload notifications use a lightweight in-memory pub/sub event fanout (process-local, non-persistent) for `GET /etfs/subscribe`.
 - Error responses avoid leaking internal filesystem paths.
 - CORS is restricted to local frontend origins on `localhost` and `127.0.0.1`.
 

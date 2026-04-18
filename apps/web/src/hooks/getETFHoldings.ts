@@ -204,27 +204,6 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
   }, [clearUploadToast, loadCatalog, showUploadToast]);
 
   useEffect(() => {
-    if (typeof EventSource === "undefined") {
-      return;
-    }
-
-    const eventSource = new EventSource("/etfs/subscribe");
-    const refreshCatalogOnUpload = () => {
-      void loadCatalog();
-    };
-
-    eventSource.addEventListener("etf_uploaded", refreshCatalogOnUpload);
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.removeEventListener("etf_uploaded", refreshCatalogOnUpload);
-      eventSource.close();
-    };
-  }, [loadCatalog]);
-
-  useEffect(() => {
     void refreshHoldings();
   }, [refreshHoldings]);
 

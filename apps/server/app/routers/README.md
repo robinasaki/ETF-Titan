@@ -25,7 +25,6 @@ The ETF router is mounted at the `/etfs` prefix and currently serves:
 - `GET /etfs/{etf_id}/price-series`
 - `GET /etfs/{etf_id}/top-holdings`
 - `POST /etfs/upload`
-- `GET /etfs/subscribe`
 
 The upload route is the only async route in this package because it streams an uploaded ETF CSV to disk before calling the service layer.
 

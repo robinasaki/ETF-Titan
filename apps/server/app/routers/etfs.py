@@ -1,20 +1,11 @@
 from __future__ import annotations
 
-import asyncio
-import json
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
 
-from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 from app.repositories.csv_repository import cleanup_staged_upload, create_staged_upload_path
-from app.services.etf_events import (
-    ETFEventQueue,
-    publish_etf_uploaded_event,
-    subscribe_etf_events,
-    unsubscribe_etf_events,
-)
 
 from app.schemas.etf import (
     EtfCatalogResponse,
@@ -151,7 +142,6 @@ async def upload_etf_analytics(
 ) -> UploadedEtfAnalyticsResponse:
     """
     Analyze one uploaded ETF weights file against the bundled prices file.
-    On success, publish the event payload.
 
     Response:
     ```
@@ -177,47 +167,9 @@ async def upload_etf_analytics(
             )
         )
 
-        # Publish the event payload to the pub/sub sys.
-        publish_etf_uploaded_event(
-            {
-                "event_type": "etf_uploaded",
-                "etf_id": analytics.etf_id,
-                "file_name": analytics.file_name,
-            }
-        )
         return analytics
     finally:
         cleanup_staged_upload(etf_staged_path)
-
-
-@router.get("/subscribe")
-async def subscribe_to_etf_events(request: Request) -> StreamingResponse:
-    """Stream ETF upload completion events for live frontend catalog refresh."""
-    # Subscribe to the event queue
-    event_queue: ETFEventQueue = subscribe_etf_events()
-
-    async def event_stream() -> AsyncGenerator[str, None]:
-        try:
-            while True:
-                if await request.is_disconnected():
-                    break
-
-                try:
-                    event_payload = await asyncio.wait_for(event_queue.get(), timeout=15.0)
-                    yield f"event: etf_uploaded\ndata: {json.dumps(event_payload)}\n\n"
-                except asyncio.TimeoutError:
-                    yield "event: keepalive\ndata: {}\n\n"
-        finally:
-            unsubscribe_etf_events(event_queue)
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        },
-    )
 
 
 def _handle_service_call(operation: Callable[[], ResponseT]) -> ResponseT:

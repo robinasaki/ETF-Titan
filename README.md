@@ -71,7 +71,6 @@ The backend exposes:
 - `GET /etfs/{etf_id}/price-series`
 - `GET /etfs/{etf_id}/top-holdings`
 - `POST /etfs/upload`
-- `GET /etfs/subscribe`
 
 See `apps/server/README.md` for backend-specific behavior and `apps/server/app/routers/README.md` for route-level notes.
 

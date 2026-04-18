@@ -10,7 +10,6 @@ The service layer sits between:
 ## Current service file
 
 - `etf_service.py`: ETF analytics orchestration and serialization helpers
-- `etf_events.py`: lightweight in-memory pub/sub event fanout for ETF upload notifications
 
 ## What this layer does
 
