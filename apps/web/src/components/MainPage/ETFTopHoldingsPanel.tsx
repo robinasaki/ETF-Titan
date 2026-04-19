@@ -216,11 +216,17 @@ export function ETFTopHoldingsPanel({
 
               <Tooltip
                 isAnimationActive={false}
+                cursor={false}
                 content={<TopHoldingsTooltip />}
                 wrapperStyle={{ outline: "none" }}
               />
 
-              <Bar dataKey="holdingSize" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+              <Bar
+                dataKey="holdingSize"
+                radius={[6, 6, 0, 0]}
+                isAnimationActive={false}
+                activeBar={{ stroke: theme.paneBorderPrimary?.val, strokeWidth: 2, fillOpacity: 0.8 }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </YStack>
