@@ -37,6 +37,7 @@ It consumes the backend ETF endpoints, renders analytics panels, and keeps view 
 - Formatter helpers in `src/utils/formatters.ts` are the single source of truth for display formatting
 - Table overflow is handled by `ScrollView` wrappers
 - Global keyboard shortcuts are registered via `KeyboardShortcutLayer`
+- The price-series line color updates from the active brush window trend: green when brush-end price is higher than brush-start price, otherwise red
 
 ## Keyboard Shortcuts
 

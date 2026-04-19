@@ -60,6 +60,17 @@ function PriceSeriesGraph({
   isLoadingPriceSeries,
 }: PriceSeriesGraphProps) {
   const theme = useTheme();
+  const lineStrokeColor = useMemo(() => {
+    const startPoint = data[brushRange.startIndex];
+    const endPoint = data[brushRange.endIndex];
+    if (!startPoint || !endPoint) {
+      return theme.lochmara?.val;
+    }
+
+    return endPoint.price > startPoint.price
+      ? theme.timeSeriesGreen?.val
+      : theme.timeSeriesRed?.val;
+  }, [brushRange.endIndex, brushRange.startIndex, data, theme]);
 
   if (data.length === 0) {
     return (
@@ -121,7 +132,7 @@ function PriceSeriesGraph({
           <Line
             type="monotone"
             dataKey="price"
-            stroke={theme.lochmara?.val}
+            stroke={lineStrokeColor}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4, strokeWidth: 0 }}

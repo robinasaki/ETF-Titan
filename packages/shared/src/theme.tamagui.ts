@@ -35,6 +35,9 @@ const darkThemeTokens = {
 
   brushInBound: "rgb(300, 300, 300)",
   brushOutBound: "rgb(50, 50, 50)",
+
+  timeSeriesRed: "#d50000",
+  timeSeriesGreen: "#00c853",
 } as const;
 
 export const tamaguiConfig: TamaguiInternalConfig = createTamagui({

@@ -11,6 +11,7 @@ This README contains only the shared-level documentation. More documentations ca
 - Upload any ETF weights CSV for analysis while reusing the bundled `prices.csv`
 - View a holdings table with constituent name, weight, latest close, and latest holding value
 - Reconstruct ETF price history from constituent price history
+- Color the price-series line by the selected brush window trend (green if end price is above start price, otherwise red)
 - Highlight the top 5 holdings by latest holding value
 - Run entirely from local repository data without any external market data API
 
