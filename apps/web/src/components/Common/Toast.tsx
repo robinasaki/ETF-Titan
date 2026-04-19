@@ -40,12 +40,12 @@ export function Toast({
       borderColor={theme.paneBorderPrimary}
       borderWidth={1}
       borderRadius={12}
-      paddingHorizontal={14}
-      paddingVertical={10}
+      paddingHorizontal={18}
+      paddingVertical={14}
       zIndex={100}
       elevation={6}
     >
-      <Text color={theme.paneTextPrimary} fontSize={13} lineHeight={18}>
+      <Text color={theme.paneTextPrimary} fontSize={18}>
         {message}
       </Text>
     </YStack>
