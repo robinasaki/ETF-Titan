@@ -15,6 +15,7 @@ export default defineConfig({
     tamaguiPlugin({
       config: "../../packages/shared/src/theme.tamagui.ts",
       components: ["tamagui"],
+      disableExtraction: true,
     }),
   ],
   server: {

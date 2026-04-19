@@ -54,4 +54,5 @@ export const tamaguiConfig: TamaguiInternalConfig = createTamagui({
   },
 });
 
+export default tamaguiConfig;
 export type AppTamaguiConfig = typeof tamaguiConfig;

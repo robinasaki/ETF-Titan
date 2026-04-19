@@ -9,14 +9,16 @@
   },
   "dependencies": {
     "@tabler/icons-react": "^3.41.1",
-    "@tamagui/config": "^2.0.0-rc.40",
+    "@tamagui/config": "^2.0.0-rc.41",
+    "@tamagui/core": "^2.0.0-rc.41",
+    "@tamagui/web": "2.0.0-rc.41",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.8.1",
-    "tamagui": "^2.0.0-rc.40"
+    "tamagui": "^2.0.0-rc.41"
   },
   "devDependencies": {
-    "@tamagui/vite-plugin": "^2.0.0-rc.40",
+    "@tamagui/vite-plugin": "^2.0.0-rc.41",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

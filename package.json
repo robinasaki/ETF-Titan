@@ -22,7 +22,9 @@
     "load": "bash scripts/load-test.sh"
   },
   "devDependencies": {
+    "@tamagui/config": "2.0.0-rc.41",
     "concurrently": "^9.2.1",
+    "tamagui": "2.0.0-rc.41",
     "typescript": "^5.9.3"
   },
   "engines": {
