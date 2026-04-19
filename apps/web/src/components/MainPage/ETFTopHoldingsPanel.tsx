@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Spinner, Text, XStack, YStack, useTheme } from "tamagui";
+import { useEffect, useMemo } from "react";
+import { Text, XStack, YStack, useTheme } from "tamagui";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useETFTopHoldings } from "../../hooks/useETFTopHoldings";
 import { formatDisplayDate, formatPercentage, formatUsdPrice } from "../../utils/formatters";
@@ -16,6 +16,7 @@ type TopHoldingBar = {
 type ETFTopHoldingsPanelProps = {
   etfId: string;
   asOfDate?: string;
+  onLoadingChange?: (isLoading: boolean) => void;
 };
 
 const TOP_HOLDINGS_CHART_HEIGHT = 240;
@@ -106,7 +107,11 @@ function TopHoldingsTooltip({
 /**
  * Bar chart for top holdings sized by latest market value.
  */
-export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProps) {
+export function ETFTopHoldingsPanel({
+  etfId,
+  asOfDate,
+  onLoadingChange,
+}: ETFTopHoldingsPanelProps) {
   const theme = useTheme();
   const {
     latestDate,
@@ -119,6 +124,13 @@ export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProp
   const bars = useMemo(() => buildTopHoldingBars(topHoldings), [topHoldings]);
   const hasPositiveBar = bars.some((bar) => bar.holdingSize > 0);
   const hasData = topHoldings.length > 0 && hasPositiveBar;
+
+  useEffect(() => {
+    onLoadingChange?.(isLoadingTopHoldings);
+    return () => {
+      onLoadingChange?.(false);
+    };
+  }, [isLoadingTopHoldings, onLoadingChange]);
 
   return (
     <YStack
@@ -133,8 +145,6 @@ export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProp
         <Text color={theme.textPrimary} fontSize={16} fontWeight="700">
           Top 5 Holdings by Size
         </Text>
-
-        {isLoadingTopHoldings ? <Spinner size="small" color={theme.textPrimary?.val} /> : null}
       </XStack>
 
       {latestDate ? (
@@ -168,7 +178,7 @@ export function ETFTopHoldingsPanel({ etfId, asOfDate }: ETFTopHoldingsPanelProp
           justifyContent="center"
         >
           <Text color={theme.textSecondary} fontSize={14}>
-            {isLoadingTopHoldings ? "Loading top holdings..." : "No top holdings data."}
+            No top holdings data.
           </Text>
         </YStack>
       ) : null}

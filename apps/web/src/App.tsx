@@ -5,6 +5,7 @@ import { MainHeader } from "./components/MainPage/MainHeader";
 import { ETFTable } from "./components/MainPage/ETFTable";
 import { ETFTableHeader } from "./components/MainPage/ETFTableHeader";
 import { ETFTopHoldingsPanel } from "./components/MainPage/ETFTopHoldingsPanel";
+import { LoadingSpinnerPane } from "./components/Common/LoadingSpinnerPane";
 import { Toast } from "./components/Common/Toast";
 import type { AppInputRef } from "./components/Common/AppInput";
 import { useETFHoldings } from "./hooks/getETFHoldings";
@@ -32,7 +33,13 @@ export default function App() {
     clearUploadToast,
     setActiveEtfId,
   } = useETFHoldings(debouncedAsOfDate);
-  const isLoading = isLoadingCatalog || isLoadingHoldings;
+  const [isLoadingPriceSeries, setIsLoadingPriceSeries] = useState(false);
+  const [isLoadingTopHoldings, setIsLoadingTopHoldings] = useState(false);
+  const isLoading =
+    isLoadingCatalog ||
+    isLoadingHoldings ||
+    isLoadingPriceSeries ||
+    isLoadingTopHoldings;
   const summaryLabel = latestDate
     ? `${holdings.length} holdings · latest close ${formatDisplayDate(latestDate)}`
     : `${holdings.length} holdings`;
@@ -90,6 +97,7 @@ export default function App() {
   return (
     <YStack paddingHorizontal={24} paddingBottom={24} paddingTop={12}>
       <MainHeader />
+      <LoadingSpinnerPane isLoading={isLoading} />
 
       <YStack
         position="relative"
@@ -106,10 +114,17 @@ export default function App() {
         <ETFTableHeader
           activeEtfId={activeEtfId}
           summaryLabel={summaryLabel}
-          isLoading={isLoading}
         />
-        <ETFPriceSeriesPanel etfId={activeEtfId} onAsOfDateChange={setAsOfDate} />
-        <ETFTopHoldingsPanel etfId={activeEtfId} asOfDate={debouncedAsOfDate} />
+        <ETFPriceSeriesPanel
+          etfId={activeEtfId}
+          onAsOfDateChange={setAsOfDate}
+          onLoadingChange={setIsLoadingPriceSeries}
+        />
+        <ETFTopHoldingsPanel
+          etfId={activeEtfId}
+          asOfDate={debouncedAsOfDate}
+          onLoadingChange={setIsLoadingTopHoldings}
+        />
         <ETFTable
           asOfDate={debouncedAsOfDate}
           activeEtfId={activeEtfId}

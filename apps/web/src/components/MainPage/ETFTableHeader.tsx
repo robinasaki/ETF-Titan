@@ -1,15 +1,13 @@
-import { Spinner, Text, XStack, useTheme } from "tamagui";
+import { Text, XStack, useTheme } from "tamagui";
 
 type ETFTableHeaderProps = {
   activeEtfId: string;
   summaryLabel: string;
-  isLoading: boolean;
 };
 
 export function ETFTableHeader({
   activeEtfId,
   summaryLabel,
-  isLoading,
 }: ETFTableHeaderProps) {
   const theme = useTheme();
 
@@ -34,7 +32,7 @@ export function ETFTableHeader({
         minWidth={0}
         flexShrink={1}
       >
-        {activeEtfId || "Loading ETFs"}
+        {activeEtfId || "No ETF selected"}
       </Text>
 
       <XStack
@@ -45,8 +43,6 @@ export function ETFTableHeader({
         flexShrink={0}
         flexWrap="nowrap"
       >
-        {isLoading ? <Spinner color={theme.paneTextPrimary?.val} size="small" /> : null}
-
         <Text
           color={theme.paneTextPrimary}
           fontSize={14}

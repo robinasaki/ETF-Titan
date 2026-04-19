@@ -38,6 +38,7 @@ It consumes the backend ETF endpoints, renders analytics panels, and keeps view 
 - Table overflow is handled by `ScrollView` wrappers
 - Global keyboard shortcuts are registered via `KeyboardShortcutLayer`
 - The price-series line color updates from the active brush window trend: green when brush-end price is higher than brush-start price, otherwise red
+- The global loading spinner pane uses a small, intentional `100ms` minimum visibility buffer in `src/components/Common/LoadingSpinnerPane.tsx` for smoother UI transitions; this does not indicate actual backend latency
 
 ## Keyboard Shortcuts
 

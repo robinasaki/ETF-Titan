@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Spinner, Text, XStack, YStack, useTheme } from "tamagui";
+import { Button, Text, XStack, YStack, useTheme } from "tamagui";
 import {
   Brush,
   CartesianGrid,
@@ -17,6 +17,7 @@ import { AppButton } from "../Common/AppButton";
 type ETFPriceSeriesPanelProps = {
   etfId: string;
   onAsOfDateChange?: (date: string) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 };
 
 type ChartPoint = {
@@ -35,7 +36,6 @@ type PriceSeriesGraphProps = {
   shouldShowBrush: boolean;
   brushRange: BrushRange;
   onBrushRangeChange: (range: BrushRange) => void;
-  isLoadingPriceSeries: boolean;
 };
 
 const CHART_HEIGHT = 260;
@@ -57,7 +57,6 @@ function PriceSeriesGraph({
   shouldShowBrush,
   brushRange,
   onBrushRangeChange,
-  isLoadingPriceSeries,
 }: PriceSeriesGraphProps) {
   const theme = useTheme();
   const lineStrokeColor = useMemo(() => {
@@ -79,7 +78,7 @@ function PriceSeriesGraph({
         justifyContent="center"
       >
         <Text color={theme.textSecondary} fontSize={14}>
-          {isLoadingPriceSeries ? "Loading reconstructed price history..." : "No chart data."}
+          No chart data.
         </Text>
       </XStack>
     );
@@ -170,6 +169,7 @@ function PriceSeriesGraph({
 export function ETFPriceSeriesPanel({
   etfId,
   onAsOfDateChange,
+  onLoadingChange,
 }: ETFPriceSeriesPanelProps) {
   const theme = useTheme();
   const {
@@ -214,6 +214,13 @@ export function ETFPriceSeriesPanel({
     !shouldShowBrush ||
     (brushRange.startIndex === fullRange.startIndex &&
       brushRange.endIndex === fullRange.endIndex);
+
+  useEffect(() => {
+    onLoadingChange?.(isLoadingPriceSeries);
+    return () => {
+      onLoadingChange?.(false);
+    };
+  }, [isLoadingPriceSeries, onLoadingChange]);
 
   useEffect(() => {
     setBrushRange(fullRange);
@@ -263,10 +270,6 @@ export function ETFPriceSeriesPanel({
           Price Overtime
         </Text>
 
-        <XStack alignItems="center" gap={8} flexWrap="nowrap" minWidth={0} marginLeft="auto" paddingRight={8}>
-          {isLoadingPriceSeries ? <Spinner size="small" color={theme.textPrimary?.val} /> : null}
-        </XStack>
-
         <AppButton
           tone="primary"
           onPress={() => {
@@ -310,7 +313,6 @@ export function ETFPriceSeriesPanel({
         shouldShowBrush={shouldShowBrush}
         brushRange={brushRange}
         onBrushRangeChange={handleBrushRangeChange}
-        isLoadingPriceSeries={isLoadingPriceSeries}
       />
     </YStack>
   );
