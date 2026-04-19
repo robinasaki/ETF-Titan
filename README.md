@@ -53,6 +53,7 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 - No packaging or containerization work is required for the current scope.
 - Currency handling is fixed to USD with no conversion layer.
 - The user can upload only ETF CSVs following the given format, and cannot commit updates or delete operations.
+- I also didn't add any GitHub actions for testing because I don't want to pay.
 - Implementation-specific assumptions are intentionally split by app:
   - backend assumptions: `apps/server/README.md`
   - frontend assumptions: `apps/web/README.md`
