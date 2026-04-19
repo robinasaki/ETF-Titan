@@ -37,7 +37,7 @@ For upload analysis:
 
 *Note*
 
-The CSV validation logics is a part of the upload pipeline here. In an industry setting, we might wish to factor these two into separate workers (with proper concurrencies, error boundaries, etc.).
+CSV validation logic is part of the upload pipeline here. In an industry setting, we might split these into separate workers with proper concurrency controls and error boundaries.
 
 ## Upload Contract
 

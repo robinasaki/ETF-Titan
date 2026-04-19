@@ -184,7 +184,7 @@ export function ETFPriceSeriesPanel({
     [priceSeries]
   );
 
-  // This can latter be changed by the brush.
+  // This can later be changed by the brush.
   const [brushRange, setBrushRange] = useState<BrushRange>({
     startIndex: 0,
     endIndex: 0,
@@ -274,7 +274,7 @@ export function ETFPriceSeriesPanel({
           whiteSpace="nowrap"
           flexShrink={0}
         >
-          Price Overtime
+          Price Over Time
         </Text>
 
         <AppButton

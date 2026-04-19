@@ -4,7 +4,7 @@ ETF Titan is a single-page ETF analytics app built for the take-home exercise.
 
 It lets a user upload ETF weights CSV files, then view holdings, reconstructed ETF prices, and top holdings derived from bundled local constituent price history.
 
-This README contains only the shared-level documentation. More documentations can be found in `apps/server/README.md` and `apps/web/README.md`.
+This README contains shared-level documentation. More details are in `apps/server/README.md` and `apps/web/README.md`.
 
 <img width="1342" height="1667" alt="Screenshot 2026-04-19 at 05 16 56" src="https://github.com/user-attachments/assets/cf14509c-dab6-465f-81d5-d052a5e099ac" />
 
@@ -26,11 +26,11 @@ This README contains only the shared-level documentation. More documentations ca
 
 *Why the stack?*
 
-For frontend, I decided to use React because of its component-driven UI and my familiarity. Vite is a straightforward framework for this single-page application local dev. I used Tamagui because it is a good practice to centralize the colour and theme tokens from the very start of the project. Combined with the below repo & frontend structure, we can have almost one single source of truth for the UI tokens.
+For the frontend, I chose React because of its component-driven UI model and my familiarity with it. Vite is a straightforward choice for local development in a single-page application. I used Tamagui to centralize color and theme tokens from the start. Combined with the repository/frontend structure below, this gives us a near single source of truth for UI tokens.
 
-For a backend non-relational ETL, Pandas is a very striaght forward solution: We don't need any DB definition, and the input is just local CSV data and the core task is dataframe-style transformation and analytics, which Pandas handles more naturally than a separate DB layer. Then, compared to Flask, FastAPI gives stronger typing and schema support out of the box, and is better at async support.
+For a backend non-relational ETL workflow, Pandas is a very straightforward solution: we do not need a DB schema, and the input is local CSV data where the core task is dataframe-style transformation and analytics, which Pandas handles naturally without a separate DB layer. Compared to Flask, FastAPI provides stronger typing and schema support out of the box, plus better async support.
 
-Then, Bun, my favourite TS engine. Compare to traditional engine like NodeJS, it is faster, does more things, and comes with a lot of pre-loaded functionalities.
+Bun is my preferred TypeScript runtime. Compared to a traditional runtime like Node.js, it is faster, does more out of the box, and includes many built-in features.
 
 ## Repository Structure
 
@@ -43,7 +43,7 @@ Then, Bun, my favourite TS engine. Compare to traditional engine like NodeJS, it
 
 We used a monorepo for scalability and maintainability.
 
-For example, if the product grows to a mobile client, we can add `apps/mobile` without organizing the codebase. This structure clearly separates private app code from intentionally shared code: `apps/*` contains app-specific implementation, while `package/shared` contains cross-app config such as Tamagui theme tokens.
+For example, if the product grows to a mobile client, we can add `apps/mobile` without reorganizing the codebase. This structure clearly separates private app code from intentionally shared code: `apps/*` contains app-specific implementation, while `packages/shared` contains cross-app config such as Tamagui theme tokens.
 
 This gives us cleaner ownership boundaries, easier reuse, less duplication, and simpler cross-app development as the platform expands.
 
@@ -54,7 +54,7 @@ This gives us cleaner ownership boundaries, easier reuse, less duplication, and 
 - No packaging or containerization work is required for the current scope.
 - Currency handling is fixed to USD with no conversion layer.
 - The user can upload only ETF CSVs following the given format, and cannot commit updates or delete operations.
-- I also didn't add any GitHub actions for testing because I don't want to pay.
+- No GitHub Action automated testing for the scope of this project.
 - Implementation-specific assumptions are intentionally split by app:
   - backend assumptions: `apps/server/README.md`
   - frontend assumptions: `apps/web/README.md`
@@ -81,7 +81,7 @@ See `apps/server/README.md` for backend-specific behavior and `apps/server/app/r
 
 ## Getting Started
 
-For this project, we're using Bun 1.3.12, Python 1.13.5 and pip 25.1. The TypeScript version is included in the `bun.lock` frozen lock.
+For this project, we're using Bun 1.3.12, Python 3.13.5 and pip 25.1. The TypeScript version is included in the `bun.lock` frozen lock.
 
 From the repository root:
 
@@ -111,10 +111,10 @@ LAN variants are also available:
 ```bash
 bun run dev:LAN
 # This exposes your page to all LAN devices
-# Useful when testing frontend in diff envs
+# Useful when testing the frontend in different environments
 ```
 
-And the frontend backend separately if needed:
+Run frontend and backend LAN variants separately if needed:
 
 ```bash
 bun run dev:web:LAN

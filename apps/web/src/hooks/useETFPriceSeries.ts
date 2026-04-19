@@ -149,8 +149,8 @@ export function useETFPriceSeries(etfId: string): UseETFPriceSeriesResult {
     [priceSeries]
   );
 
-  // In theory we need to add some virtualization to optimize the comptue and IO.
-  // But for the scope of this project, I'll let the memotization recompute upon one stat change.
+  // In theory we should add virtualization to optimize compute and I/O.
+  // For this project scope, letting memoization recompute on state changes is acceptable.
   return useMemo(
     () => ({
       latestDate,

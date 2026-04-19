@@ -30,7 +30,7 @@ router = APIRouter(prefix="/etfs", tags=["etfs"])
 
 ResponseT = TypeVar("ResponseT") # For python type checker
 
-# For browser compatability. Sometimes diff browsers submit diff Content-Type for csv.
+# For browser compatibility. Some browsers submit different CSV content types.
 CSV_CONTENT_TYPES = {
     "text/csv",
     "application/csv",

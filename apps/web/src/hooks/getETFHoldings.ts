@@ -44,7 +44,7 @@ type UseETFHoldingsResult = {
 };
 
 /**
- * Helpfer function to call endpoint.
+ * Helper function to call an endpoint.
  */
 async function requestJson<ResponseType>(
   endpoint: string,
@@ -208,8 +208,9 @@ export function useETFHoldings(asOfDate?: string): UseETFHoldingsResult {
   }, [refreshHoldings]);
 
   /**
-   * Maybe we could use some virtualization / pagnition here.
-   * Recompute the entire table memotization if one stat changes is not ideal on a large df.
+   * Maybe we could use virtualization/pagination here.
+   * Recomputing the entire table memoization when one state value changes
+   * is not ideal for a large dataframe.
    * But since the dfs here are small it's fine.
    */
   return useMemo(

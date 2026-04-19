@@ -5,7 +5,7 @@ It consumes the backend ETF endpoints, renders analytics panels, and keeps view 
 
 ## Responsibilities
 
-- Render the ETF page shell (`Header`, table header, price series panel, top holdings pie chart, and holdings table)
+- Render the ETF page shell (`Header`, table header, price series panel, top holdings bar chart, and holdings table)
 - Display holdings snapshots with sorting and symbol filtering
 - Show reconstructed ETF price history and top holdings distribution
 - Handle loading and error states for each panel
@@ -21,13 +21,13 @@ It consumes the backend ETF endpoints, renders analytics panels, and keeps view 
 
 ## Frontend Structure
 - `web/src/` is the framework root.
-- `web/src/components/Commmon/` stores common, reuseable components.
-- `web/src/components/MainPage/` contains the components that builds up to the actual page table.
-- `web/src/hooks/` stores all the hook components to separate communication logics and components. 
-- `web/src/utils/` contains all the helper files such as normalizers and formatters.
-- `web/src/test/` contains the test infra. Then the feature tests are alongside the actual components.
-- `web/App.tsx/` is the component building module.
-- `web/main.tsx/` is the framework provider building module.
+- `web/src/components/Common/` stores common, reusable components.
+- `web/src/components/MainPage/` contains the components that build the main page table.
+- `web/src/hooks/` stores hooks to separate communication logic from UI components.
+- `web/src/utils/` contains helper files such as normalizers and formatters.
+- `web/src/test/` contains shared test infrastructure, while feature tests live alongside components.
+- `web/src/App.tsx` is the main page composition module.
+- `web/src/main.tsx` is the framework provider entrypoint module.
 
 ## Technical Notes
 

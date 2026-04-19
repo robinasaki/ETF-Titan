@@ -226,7 +226,7 @@ export function ETFTable({
 
     const holdingsCount = visibleHoldings.length;
 
-    // Control pane collapse-expand logics
+    // Control pane collapse/expand logic
     const controlsColumnWidth = isControlsExpanded ? CONTROLS_COLUMN_WIDTH : 0;
     const controlsPaneOpacity = isControlsExpanded ? 1 : 0;
     const collapsedToggleOpacity = isControlsExpanded ? 0 : 1;
