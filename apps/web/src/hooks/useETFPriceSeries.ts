@@ -5,6 +5,16 @@ export type ETFPriceSeriesPoint = {
   price: number;
 };
 
+export type ETFPriceTrendDirection = "up" | "down" | "flat";
+
+export type ETFPriceTrend = {
+  direction: ETFPriceTrendDirection;
+  changeRatio: number;
+  startPrice: number;
+  endPrice: number;
+  hasTrendData: boolean;
+};
+
 type ETFPriceSeriesResponse = {
   etf_id: string;
   latest_date: string;
@@ -16,8 +26,54 @@ type UseETFPriceSeriesResult = {
   isLoadingPriceSeries: boolean;
   priceSeries: ETFPriceSeriesPoint[];
   priceSeriesErrorMessage: string;
+  computePriceTrend: (startIndex: number, endIndex: number) => ETFPriceTrend;
   refreshPriceSeries: () => Promise<void>;
 };
+
+function emptyTrend(): ETFPriceTrend {
+  return {
+    direction: "flat",
+    changeRatio: 0,
+    startPrice: 0,
+    endPrice: 0,
+    hasTrendData: false,
+  };
+}
+
+/**
+ * Compute directional price change for a selected index range.
+ */
+export function computePriceTrendForRange(
+  priceSeries: ETFPriceSeriesPoint[],
+  startIndex: number,
+  endIndex: number
+): ETFPriceTrend {
+  if (priceSeries.length === 0) {
+    return emptyTrend();
+  }
+
+  const boundedStartIndex = Math.min(Math.max(startIndex, 0), priceSeries.length - 1);
+  const boundedEndIndex = Math.min(Math.max(endIndex, 0), priceSeries.length - 1);
+  const startPoint = priceSeries[Math.min(boundedStartIndex, boundedEndIndex)];
+  const endPoint = priceSeries[Math.max(boundedStartIndex, boundedEndIndex)];
+  if (!startPoint || !endPoint) {
+    return emptyTrend();
+  }
+
+  const startPrice = startPoint.price;
+  const endPrice = endPoint.price;
+  const delta = endPrice - startPrice;
+  const hasValidBasePrice = Number.isFinite(startPrice) && startPrice !== 0;
+  const changeRatio = hasValidBasePrice ? delta / startPrice : 0;
+
+  return {
+    direction: delta > 0 ? "up" : delta < 0 ? "down" : "flat",
+    changeRatio,
+    startPrice,
+    endPrice,
+    hasTrendData: Number.isFinite(startPrice) && Number.isFinite(endPrice),
+  };
+}
 
 /**
  * Load the reconstructed ETF price time series for one selected ETF.
@@ -87,6 +143,12 @@ export function useETFPriceSeries(etfId: string): UseETFPriceSeriesResult {
     };
   }, [refreshPriceSeries]);
 
+  const computePriceTrend = useCallback(
+    (startIndex: number, endIndex: number) =>
+      computePriceTrendForRange(priceSeries, startIndex, endIndex),
+    [priceSeries]
+  );
+
   // In theory we need to add some virtualization to optimize the comptue and IO.
   // But for the scope of this project, I'll let the memotization recompute upon one stat change.
   return useMemo(
@@ -95,6 +157,7 @@ export function useETFPriceSeries(etfId: string): UseETFPriceSeriesResult {
       isLoadingPriceSeries,
       priceSeries,
       priceSeriesErrorMessage,
+      computePriceTrend,
       refreshPriceSeries,
     }),
     [
@@ -102,6 +165,7 @@ export function useETFPriceSeries(etfId: string): UseETFPriceSeriesResult {
       isLoadingPriceSeries,
       priceSeries,
       priceSeriesErrorMessage,
+      computePriceTrend,
       refreshPriceSeries,
     ]
   );

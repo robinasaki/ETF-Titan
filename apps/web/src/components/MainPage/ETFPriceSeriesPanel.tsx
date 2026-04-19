@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Text, XStack, YStack, useTheme } from "tamagui";
+import { Text, XStack, YStack, useTheme } from "tamagui";
 import {
   Brush,
   CartesianGrid,
@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useETFPriceSeries } from "../../hooks/useETFPriceSeries";
-import { formatDisplayDate, formatUsdPrice } from "../../utils/formatters";
+import { formatDisplayDate, formatPercentage, formatUsdPrice } from "../../utils/formatters";
 import { AppButton } from "../Common/AppButton";
 
 type ETFPriceSeriesPanelProps = {
@@ -35,6 +35,7 @@ type PriceSeriesGraphProps = {
   data: ChartPoint[];
   shouldShowBrush: boolean;
   brushRange: BrushRange;
+  lineStrokeColor: string;
   onBrushRangeChange: (range: BrushRange) => void;
 };
 
@@ -56,20 +57,10 @@ function PriceSeriesGraph({
   data,
   shouldShowBrush,
   brushRange,
+  lineStrokeColor,
   onBrushRangeChange,
 }: PriceSeriesGraphProps) {
   const theme = useTheme();
-  const lineStrokeColor = useMemo(() => {
-    const startPoint = data[brushRange.startIndex];
-    const endPoint = data[brushRange.endIndex];
-    if (!startPoint || !endPoint) {
-      return theme.lochmara?.val;
-    }
-
-    return endPoint.price > startPoint.price
-      ? theme.timeSeriesGreen?.val
-      : theme.timeSeriesRed?.val;
-  }, [brushRange.endIndex, brushRange.startIndex, data, theme]);
 
   if (data.length === 0) {
     return (
@@ -177,6 +168,7 @@ export function ETFPriceSeriesPanel({
     isLoadingPriceSeries,
     priceSeries,
     priceSeriesErrorMessage,
+    computePriceTrend,
     refreshPriceSeries,
   } = useETFPriceSeries(etfId);
 
@@ -214,6 +206,21 @@ export function ETFPriceSeriesPanel({
     !shouldShowBrush ||
     (brushRange.startIndex === fullRange.startIndex &&
       brushRange.endIndex === fullRange.endIndex);
+
+  // Up xx% or down xx%
+  const trend = useMemo(
+    () => computePriceTrend(brushRange.startIndex, brushRange.endIndex),
+    [brushRange.endIndex, brushRange.startIndex, computePriceTrend]
+  );
+  const lineStrokeColor =
+    trend.direction === "up"
+      ? theme.timeSeriesGreen?.val
+      : trend.direction === "down"
+        ? theme.timeSeriesRed?.val
+        : theme.lochmara?.val;
+  const isDownTrend = trend.direction === "down";
+  const trendIcon = isDownTrend ? "▼" : "▲";
+  const trendLabel = `${isDownTrend ? "Down" : "Up"} ${formatPercentage(Math.abs(trend.changeRatio))}`;
 
   useEffect(() => {
     onLoadingChange?.(isLoadingPriceSeries);
@@ -281,11 +288,21 @@ export function ETFPriceSeriesPanel({
           right={0}
           top={0}
         >
-          <Text color={theme.paneTextPrimary} fontSize={13} fontWeight="600" whiteSpace="nowrap">
+          <Text color={theme.paneTextPrimary} fontSize={14} fontWeight="600" whiteSpace="nowrap">
             Reset zoom
           </Text>
         </AppButton>
       </XStack>
+      {latestDate && trend.hasTrendData ? (
+        <XStack alignItems="center" gap={6}>
+          <Text color={lineStrokeColor} fontSize={14} fontWeight="700" paddingRight={6}>
+            {trendIcon}
+          </Text>
+          <Text color={lineStrokeColor} fontSize={14} fontWeight="600">
+            {trendLabel}
+          </Text>
+        </XStack>
+      ) : null}
 
       {priceSeriesErrorMessage ? (
         <YStack gap={8}>
@@ -312,6 +329,7 @@ export function ETFPriceSeriesPanel({
         data={data}
         shouldShowBrush={shouldShowBrush}
         brushRange={brushRange}
+        lineStrokeColor={lineStrokeColor ?? theme.lochmara?.val ?? "#2563EB"}
         onBrushRangeChange={handleBrushRangeChange}
       />
     </YStack>

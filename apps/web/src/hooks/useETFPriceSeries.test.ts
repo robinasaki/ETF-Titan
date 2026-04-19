@@ -103,4 +103,29 @@ describe("useETFPriceSeries", () => {
     expect(result.current.latestDate).toBe("2026-04-17");
     expect(result.current.priceSeries[0]?.price).toBe(201.89);
   });
+
+  it("computes directional price trend for a selected range", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse({
+        etf_id: "ETF3",
+        latest_date: "2026-04-17",
+        items: [
+          { date: "2026-04-15", price: 100 },
+          { date: "2026-04-16", price: 110 },
+          { date: "2026-04-17", price: 105 },
+        ],
+      })
+    );
+
+    const { result } = renderHook(() => useETFPriceSeries("ETF3"));
+
+    await waitFor(() => {
+      expect(result.current.isLoadingPriceSeries).toBe(false);
+    });
+
+    const trend = result.current.computePriceTrend(0, 2);
+    expect(trend.direction).toBe("up");
+    expect(trend.changeRatio).toBeCloseTo(0.05);
+    expect(trend.hasTrendData).toBe(true);
+  });
 });
