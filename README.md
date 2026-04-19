@@ -6,7 +6,8 @@ It lets a user upload ETF weights CSV files, then view holdings, reconstructed E
 
 This README contains only the shared-level documentation. More documentations can be found in `apps/server/README.md` and `apps/web/README.md`.
 
-<img width="1355" height="1615" alt="Screenshot 2026-04-18 at 21 04 26" src="https://github.com/user-attachments/assets/be56faa2-35a7-426e-88de-251d4e775a1a" />
+<img width="1342" height="1667" alt="Screenshot 2026-04-19 at 05 16 56" src="https://github.com/user-attachments/assets/cf14509c-dab6-465f-81d5-d052a5e099ac" />
+
 
 ## Product Scope
 
