@@ -1,5 +1,5 @@
 import {
-  type ElementRef,
+  type ComponentRef,
   type ForwardRefExoticComponent,
   type RefAttributes,
   forwardRef,
@@ -8,7 +8,7 @@ import type { InputProps } from "tamagui";
 import { Input, useTheme } from "tamagui";
 
 type AppInputProps = InputProps;
-export type AppInputRef = ElementRef<typeof Input>;
+export type AppInputRef = ComponentRef<typeof Input>;
 
 type AppInputComponent = ForwardRefExoticComponent<
   AppInputProps & RefAttributes<AppInputRef>
