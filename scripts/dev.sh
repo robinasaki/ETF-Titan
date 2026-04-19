@@ -49,5 +49,5 @@ exec bunx concurrently \
   --kill-others \
   --names "API,WEB" \
   --prefix "[{name}]" \
-  "$PYTHON_BIN -m uvicorn app.main:app --app-dir \"$SERVER_DIR\" --reload --host $API_HOST --port $API_PORT" \
+  "\"$PYTHON_BIN\" -m uvicorn app.main:app --app-dir \"$SERVER_DIR\" --reload --host $API_HOST --port $API_PORT" \
   "bun --cwd \"$WEB_DIR\" dev -- --host $WEB_HOST"

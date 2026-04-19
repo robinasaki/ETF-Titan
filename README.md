@@ -87,6 +87,7 @@ From the repository root:
 ```bash
 bun run setup
 # This installs the dependencies for both TS and Python
+# Note that this might take a while (usually ~2 mins).
 ```
 
 Start the full stack locally:
