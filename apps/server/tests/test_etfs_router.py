@@ -168,6 +168,30 @@ class EtfUploadRouteTests(unittest.TestCase):
         self.assertEqual(captured.exception.status_code, 422)
         self.assertEqual(captured.exception.detail, "ETF weights upload is empty.")
 
+    def test_stage_csv_upload_rejects_payloads_larger_than_limit(self) -> None:
+        """Ensure _stage_csv_upload() rejects CSV uploads that exceed max bytes."""
+        oversized_csv = "name,weight\n" + "".join(
+            f"SYM{index:04d},0.00000001\n" for index in range(40)
+        )
+        self.assertGreater(len(oversized_csv.encode("utf-8")), etfs.MAX_UPLOAD_CSV_BYTES)
+
+        with self.assertRaises(HTTPException) as captured:
+            asyncio.run(
+                etfs._stage_csv_upload(
+                    upload=self._upload_file("ETF1.csv", oversized_csv),
+                    label="ETF weights",
+                )
+            )
+
+        self.assertEqual(captured.exception.status_code, 413)
+        self.assertEqual(
+            captured.exception.detail,
+            (
+                "ETF weights upload exceeds the maximum size of "
+                f"{etfs.MAX_UPLOAD_CSV_BYTES} bytes."
+            ),
+        )
+
     def test_stage_csv_upload_writes_expected_file_contents(self) -> None:
         """Ensure _stage_csv_upload() writes the incoming CSV bytes to disk."""
         csv_content = "name,weight\nAAPL,1.0\n"

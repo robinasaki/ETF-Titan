@@ -37,6 +37,7 @@ CSV_CONTENT_TYPES = {
 }
 ETF_UPLOAD_FILENAME_REGEX = r"^ETF\d*\.csv$"
 UPLOAD_READ_CHUNK_BYTES = 64 * 1024
+MAX_UPLOAD_CSV_BYTES = 400
 
 
 @router.get("", response_model=EtfCatalogResponse)
@@ -225,6 +226,7 @@ async def _stage_csv_upload(
 
     staged_path = create_staged_upload_path(filename)
     wrote_any = False
+    bytes_written = 0
     try:
         with staged_path.open("wb") as staged_file:
             while True:
@@ -232,6 +234,16 @@ async def _stage_csv_upload(
                 if not chunk:
                     break
                 wrote_any = True
+                bytes_written += len(chunk)
+                if bytes_written > MAX_UPLOAD_CSV_BYTES:
+                    cleanup_staged_upload(staged_path)
+                    raise HTTPException(
+                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                        detail=(
+                            f"{label} upload exceeds the maximum size of "
+                            f"{MAX_UPLOAD_CSV_BYTES} bytes."
+                        ),
+                    )
                 staged_file.write(chunk)
     except OSError as exc:
         cleanup_staged_upload(staged_path)
