@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@shared": path.resolve(__dirname, "../../packages/shared/src"),
+      "@tamagui/config": path.resolve(__dirname, "node_modules/@tamagui/config")
     },
   },
   plugins: [
